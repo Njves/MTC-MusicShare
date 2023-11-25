@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -25,6 +23,11 @@ user_playlists = db.Table("user_playlists",
                               'user.id', ondelete='CASCADE')),
                           db.Column('playlist_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
 
+songs_in_room = db.Table("room_songs",
+                         db.Column('room_id', db.Integer, db.ForeignKey(
+                             'user.id', ondelete='CASCADE')),
+                         db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -37,7 +40,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(128), nullable=False, default="")
     password_hash = db.Column(db.String(256), nullable=False)
     songs = db.relationship('User_songs', secondary=user_songs, lazy='dynamic')
-    playlists = db.relationship('User_playlists', secondary=user_playlists, lazy='dynamic')
+    playlists = db.relationship(
+        'User_playlists', secondary=user_playlists, lazy='dynamic')
 
     def __repr__(self) -> str:
         return f'User {self.id}, Username: {self.username}, email: {self.email}'
@@ -53,12 +57,16 @@ class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creator_id = db.Column(db.Integer, db.ForeignKey(
         'user.id', ondelete='CASCADE'))
+    title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(), nullable=False)
+    password = db.Column(db.String(256))
     users = db.relationship('Users', backref='room', secondary=users_room,
                             lazy='dynamic')
+    songs = db.relationship(
+        'Songs_in_room', secondary=songs_in_room, lazy='dynamic')
 
     def __repr__(self) -> str:
-        return f'Room {self.id}, description: {self.description}'
+        return f'Room {self.id}, title: {self.title}, description: {self.description}'
 
 
 class Playlist(db.Model):
