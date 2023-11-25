@@ -3,16 +3,6 @@ import os
 import qrcode
 from qrcode import constants
 
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
-
-
-def add_query_parameters(url, parameters):
-    parts = list(urlparse(url))
-    current_parameters = parse_qs(parts[4])
-    current_parameters.update(parameters)
-    parts[4] = urlencode(current_parameters, doseq=True)
-    return urlunparse(parts)
-
 
 def generate_link_and_qr_code(data):
     link = "https://mtc-u2hp.onrender.com/enter_room_by_url/"
@@ -37,5 +27,4 @@ def decode_link(link):
     encoded_data = link.rsplit('/', 1)[-1]
     link = link.removesuffix(encoded_data)
     decoded_data = eval(base64.urlsafe_b64decode(encoded_data).decode())
-    new_link = add_query_parameters(link, decoded_data)
-    return new_link
+    return decoded_data

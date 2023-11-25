@@ -71,8 +71,15 @@ def logout_from_room(room_id):
 @bp.route('/enter_room_by_url/', methods=['GET'])
 @login_required
 def enter_room_from_url():
-    room_id = request.args.get('id')
-    password = request.args.get('password')
+    encoded_link = request.args.get('link')
+    data = generate_qrcode.decode_link(encoded_link)
+    if type(data) != dict:
+        # ссылка не правильная
+        return redirect()
+    if data.get("id") is None or data.get("password") is None:
+        # ссылка не правильная
+        return redirect()
+    room_id, password = data.get("id"), data.get("password")
     room = Room.query.get(room_id)
     if room:
         if current_user in room.users:
@@ -88,3 +95,13 @@ def enter_room_from_url():
     else:
         # комната уже удалена или недоступна по иным причинам, просто обновить
         return redirect()
+
+@bp.route('/enter_room/<int:room_id>/qr', methods=['GET'])
+@login_required
+def show_qr_code(room_id):
+    room = Room.query.get(room_id)
+    if room:
+        image_path = room.qr
+        link = room.link
+        # отоборажение картинки по полному пути и ссылки
+        return render_template()
