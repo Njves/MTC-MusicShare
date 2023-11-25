@@ -37,8 +37,6 @@ def enter_room(room_id):
     if room:
         if current_user in room.users:
             # Юзер уже зашел туда с другой вкладки, просто закинь его
-            song = [i for i in room.songs].pop(0)
-
             return render_template('room/room.html', song=song)
         password = request.form.get('password')
         if password and room.password and room.password != password:

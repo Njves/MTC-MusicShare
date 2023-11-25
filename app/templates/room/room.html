@@ -5,6 +5,7 @@
     <title>Title</title>
 </head>
 <body>
-  <audio src="{{ song.file_url }}">Музыка</audio>
+<p>Муызка</p>
+  <audio autoplay controls src="{{ url_for('static', filename=song.file_url) }}">Музыка</audio>
 </body>
 </html>
