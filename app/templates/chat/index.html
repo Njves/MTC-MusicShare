@@ -43,48 +43,62 @@
     </style>
 </head>
 <body>
-    <div id="landing">
-        <input type="text" id="username" placeholder="Username">
-        <button id="join-btn">JOIN</button>
-    </div>
+<div id="landing">
+    <input type="text" id="username" placeholder="Username">
+    <label>Первая комната?</label><input type="checkbox" id="room"/>
+    <button id="join-btn">JOIN</button>
+</div>
 
-    <div id="chat" style="display:none;">
+<div id="chat" style="display:none;">
 
-        <ul id="chat-messages">
-        </ul>
-        <input type="text" id="message" placeholder="Enter a Message">
-    </div>
-    <script>
-        const socket = io({autoConnect: false});
-
-        document.getElementById("join-btn").addEventListener("click", function() {
-            let username = document.getElementById("username").value;
-
-            socket.connect();
-
-            socket.on("connect", function() {
-                socket.emit("user_join", username);
-            })
-
-            document.getElementById("chat").style.display = "block";
-            document.getElementById("landing").style.display = "none";
+    <ul id="chat-messages">
+    </ul>
+    <input type="text" id="message" placeholder="Enter a Message">
+</div>
+<script>
+    const socket = io({autoConnect: false});
+    document.getElementById("join-btn").addEventListener("click", function() {
+        let username = document.getElementById("username").value;
+        let roomBox = document.getElementById("room").checked
+        socket.connect();
+        console.log(roomBox)
+        socket.on("connect", function() {
+            if (roomBox) {
+                var json = {
+                    "username": username,
+                    "room": 1
+                }
+            }
+            else {
+                var json = {
+                    "username": username,
+                    "room": 2
+                }
+            }
+            socket.emit("user_join", JSON.stringify(json));
         })
 
-        document.getElementById("message").addEventListener("keyup", function (event) {
+        document.getElementById("chat").style.display = "block";
+        document.getElementById("landing").style.display = "none";
+    })
+
+    document.getElementById("message").addEventListener("keyup", function (event) {
             if (event.key == "Enter") {
                 let message = document.getElementById("message").value;
-                socket.emit("new_message", message);
+
+                socket.emit("new_message", JSON.stringify({'room': 1, 'message': message}));
                 document.getElementById("message").value = "";
             }
         })
 
-        socket.on("chat", function(data) {
-            let ul = document.getElementById("chat-messages");
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode(data["username"] + ": " + data["message"]));
-            ul.appendChild(li);
-            ul.scrolltop = ul.scrollHeight;
-        })
-    </script>
+
+    socket.on("chat", function(data) {
+        let ul = document.getElementById("chat-messages");
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode(data["username"] + ": " + data["message"]));
+        ul.appendChild(li);
+        ul.scrolltop = ul.scrollHeight;
+    })
+</script>
 </body>
 </html>
