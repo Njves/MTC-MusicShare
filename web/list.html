@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Participants List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #f4f4f4;
+    }
+
+    .participants-container {
+      max-width: 600px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .participant-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .participant-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .remove-button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="participants-container">
+    <h2>Participants List</h2>
+    <ul class="participant-list" id="participantList">
+      <!-- Пример участников. Вы можете добавить свою логику для загрузки участников с сервера. -->
+      <li class="participant-item" data-username="user1">
+        <span>User 1</span>
+        <button class="remove-button" onclick="removeParticipant(this)">Remove</button>
+      </li>
+      <li class="participant-item" data-username="user2">
+        <span>User 2</span>
+        <button class="remove-button" onclick="removeParticipant(this)">Remove</button>
+      </li>
+      <!-- Добавьте новые участники сюда -->
+    </ul>
+  </div>
+
+  <script>
+    function removeParticipant(button) {
+      var listItem = button.closest('.participant-item');
+      var username = listItem.getAttribute('data-username');
+      // Добавьте здесь логику для удаления участника с сервера, если требуется
+      listItem.remove();
+    }
+  </script>
+</body>
+
+</html>

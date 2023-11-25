@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Queue</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #f4f4f4;
+    }
+
+    .queue-container {
+      max-width: 600px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .track-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .track-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .add-track-button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      background-color: #2ecc71;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="queue-container">
+    <h2>Music Queue</h2>
+    <ul class="track-list" id="trackList">
+      <!-- Пример треков. Вы можете добавить свою логику для загрузки треков с сервера. -->
+      <li class="track-item">
+        <span>Title 1</span>
+        <span>Time 1</span>
+        <span>Duration 1</span>
+      </li>
+      <li class="track-item">
+        <span>Title 2</span>
+        <span>Time 2</span>
+        <span>Duration 2</span>
+      </li>
+      <!-- Добавьте новые треки сюда -->
+    </ul>
+
+    <button class="add-track-button" onclick="openFileInput()">Add Track</button>
+    <input type="file" class="file-input" id="fileInput" accept=".mp3, .ogg, .wav" onchange="addTrack()">
+  </div>
+
+  <script>
+    function openFileInput() {
+      document.getElementById('fileInput').click();
+    }
+
+    function addTrack() {
+      var fileInput = document.getElementById('fileInput');
+      var trackList = document.getElementById('trackList');
+      var file = fileInput.files[0];
+
+      if (file) {
+        // Добавьте здесь логику для обработки выбранного файла
+        var newTrackItem = document.createElement('li');
+        newTrackItem.classList.add('track-item');
+        newTrackItem.innerHTML = `
+          <span>${file.name}</span>
+          <span>${new Date().toLocaleTimeString()}</span>
+          <span>${formatDuration(file)}</span>
+        `;
+        trackList.appendChild(newTrackItem);
+        fileInput.value = ''; // Очищаем поле input для возможности выбора того же файла снова
+      }
+    }
+
+    function formatDuration(file) {
+      // Замените это на логику для определения продолжительности трека
+      return '3:30'; // Пример формата: минуты:секунды
+    }
+  </script>
+</body>
+
+</html>
