@@ -5,8 +5,7 @@ from app.chat import bp
 
 users = {}
 
-@bp.route("/chat"
-          "")
+@bp.route("/chat")
 def index():
     return render_template('chat/index.html/')
 @socketio.on("connect")

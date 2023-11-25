@@ -1,4 +1,3 @@
-import flask
 from flask import redirect, render_template, request
 from flask_login import login_required, current_user
 
@@ -7,11 +6,11 @@ from app.models import Room
 from app.room import bp
 
 
-@bp.route('', methods=['POST'])
-def create(user_id):
+@bp.route('/', methods=['POST'])
+def create():
     if request.method == 'POST':
-        title, description, password, songs = request.form.get('title_room'), request.form.get(
-            'description_room'), request.form.get('password_room'), request.form.get('songs_room')
+        title, description, password, songs, user_id = request.form.get('title_room'), request.form.get(
+            'description_room'), request.form.get('password_room'), request.form.get('songs_room'),request.form.get('user_id')
         room = Room(creator_id=user_id, title=title, songs=songs,
                     description=description, password=password)
         db.session.add(room)
@@ -20,7 +19,7 @@ def create(user_id):
         return render_template()
 
 
-@bp.route('', methods=['POST'])
+@bp.route('/', methods=['POST'])
 def delete():
     if request.method == 'POST':
         id = request.form.get('id')
@@ -51,7 +50,7 @@ def enter_room(room_id):
         return redirect()
 
 
-@bp.route('', methods=['POST'])
+@bp.route('/', methods=['POST'])
 @login_required
 def logout_from_room(room_id):
     room = Room.query.get(room_id)

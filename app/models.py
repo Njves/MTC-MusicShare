@@ -21,11 +21,11 @@ user_songs = db.Table("user_songs",
 user_playlists = db.Table("user_playlists",
                           db.Column('user_id', db.Integer, db.ForeignKey(
                               'user.id', ondelete='CASCADE')),
-                          db.Column('playlist_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
+                          db.Column('playlist_id', db.Integer, db.ForeignKey('playlist.id', ondelete='CASCADE')))
 
 songs_in_room = db.Table("room_songs",
                          db.Column('room_id', db.Integer, db.ForeignKey(
-                             'user.id', ondelete='CASCADE')),
+                             'room.id', ondelete='CASCADE')),
                          db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
 
 
@@ -39,9 +39,9 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(128), nullable=False, default="")
     password_hash = db.Column(db.String(256), nullable=False)
-    songs = db.relationship('User_songs', secondary=user_songs, lazy='dynamic')
+    songs = db.relationship('Song', backref='owner', secondary=user_songs, lazy='dynamic')
     playlists = db.relationship(
-        'User_playlists', secondary=user_playlists, lazy='dynamic')
+        'Playlist', secondary=user_playlists, backref='owner', lazy='dynamic')
 
     def __repr__(self) -> str:
         return f'User {self.id}, Username: {self.username}, email: {self.email}'
@@ -60,10 +60,10 @@ class Room(db.Model):
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(), nullable=False)
     password = db.Column(db.String(256))
-    users = db.relationship('Users', backref='room', secondary=users_room,
+    users = db.relationship('User', backref='room', secondary=users_room,
                             lazy='dynamic')
     songs = db.relationship(
-        'Songs_in_room', secondary=songs_in_room, lazy='dynamic')
+        'Song', secondary=songs_in_room, lazy='dynamic')
 
     def __repr__(self) -> str:
         return f'Room {self.id}, title: {self.title}, description: {self.description}'
@@ -75,7 +75,7 @@ class Playlist(db.Model):
         db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(), nullable=False)
     description = db.Column(db.String(), nullable=False)
-    songs = db.relationship('Songs', secondary=playlist_songs,
+    songs = db.relationship('Song', secondary=playlist_songs,
                             lazy='dynamic')
 
     def __repr__(self):
