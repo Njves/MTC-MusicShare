@@ -7,7 +7,6 @@ from app.auth import bp
 from app.models import User
 
 
-
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
@@ -33,6 +32,19 @@ def login():
                 return flask.redirect(next or flask.url_for('main.index'))
         redirect(url_for('auth.login'))
     return render_template('auth/login.html')
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        reg_login, reg_password = request.form.get('login'), request.form.get('reg_password')
+        if User.query.filter_by(username=reg_login).one() is None:
+            user = User(username=reg_login)
+            user.set_password(reg_password)
+            db.session.add(user)
+            db.session.commit()
+        else:
+            print('Такой пользователь уже суещствует')
 
 
 @bp.route("/logout")
