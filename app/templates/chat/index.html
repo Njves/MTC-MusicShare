@@ -45,7 +45,11 @@
 <body>
 <div id="landing">
     <input type="text" id="username" placeholder="Username">
-    <label>Первая комната?</label><input type="checkbox" id="room"/>
+        {% for room in current_user.room %}
+        <option value="{{ room.id }}">{{ room.id }}</option>
+        {% endfor %}
+
+
     <button id="join-btn">JOIN</button>
 </div>
 
@@ -57,25 +61,15 @@
 </div>
 <script>
     const socket = io({autoConnect: false});
+    var current_room = 0;
     document.getElementById("join-btn").addEventListener("click", function() {
         let username = document.getElementById("username").value;
-        let roomBox = document.getElementById("room").checked
+        var selectElement = document.getElementById("listChoice");
+        var room = selectElement.value;
+        current_room = room;
         socket.connect();
-        console.log(roomBox)
         socket.on("connect", function() {
-            if (roomBox) {
-                var json = {
-                    "username": username,
-                    "room": 1
-                }
-            }
-            else {
-                var json = {
-                    "username": username,
-                    "room": 2
-                }
-            }
-            socket.emit("user_join", JSON.stringify(json));
+            socket.emit("user_join", JSON.stringify({"username": username, "room": room}));
         })
 
         document.getElementById("chat").style.display = "block";
@@ -83,13 +77,13 @@
     })
 
     document.getElementById("message").addEventListener("keyup", function (event) {
-            if (event.key == "Enter") {
-                let message = document.getElementById("message").value;
+        if (event.key == "Enter") {
+            let message = document.getElementById("message").value;
 
-                socket.emit("new_message", JSON.stringify({'room': 1, 'message': message}));
-                document.getElementById("message").value = "";
-            }
-        })
+            socket.emit("new_message", JSON.stringify({'room': current_room, 'message': message}));
+            document.getElementById("message").value = "";
+        }
+    })
 
 
     socket.on("chat", function(data) {

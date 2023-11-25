@@ -45,6 +45,10 @@ def create_app(config_class=Config):
 
     app.register_blueprint(chat_bp)
 
+    from app.player import bp as player_bp
+
+    app.register_blueprint(player_bp)
+
     return app
 
 
