@@ -64,7 +64,8 @@ class Room(db.Model):
                             lazy='dynamic')
     songs = db.relationship(
         'Song', secondary=songs_in_room, lazy='dynamic')
-
+    qr_code = db.Column(db.String(256))
+    link = db.Column(db.String(256))
     def __repr__(self) -> str:
         return f'Room {self.id}, title: {self.title}, description: {self.description}'
 

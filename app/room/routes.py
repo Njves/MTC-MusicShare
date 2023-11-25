@@ -1,18 +1,23 @@
+import os
 from flask import redirect, render_template, request
 from flask_login import login_required, current_user
 
 from app import db
 from app.models import Room
-from app.room import bp
+from app.room import bp, generate_qrcode
 
 
 @bp.route('/', methods=['POST'])
 def create():
     if request.method == 'POST':
         title, description, password, songs, user_id = request.form.get('title_room'), request.form.get(
-            'description_room'), request.form.get('password_room'), request.form.get('songs_room'),request.form.get('user_id')
+            'description_room'), request.form.get('password_room'), request.form.get('songs_room'), request.form.get('user_id')
         room = Room(creator_id=user_id, title=title, songs=songs,
                     description=description, password=password)
+        link, qr_code = generate_qrcode.generate_link_and_qr_code(
+            {"id": room.id, "password": password})
+        room.link = link
+        room.qr_code = qr_code
         db.session.add(room)
         db.session.commit()
         # комната успешно создано, обнови страницу
@@ -23,6 +28,8 @@ def create():
 def delete():
     if request.method == 'POST':
         id = request.form.get('id')
+        room = Room.query.get(id)
+        os.remove(room.qr_code)
         Room.query.filter_by(id=id).delete()
         db.session.commit()
         # комната успешно удалена, обнови страницу
