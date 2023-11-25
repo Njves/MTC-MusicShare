@@ -78,7 +78,6 @@ def enter_room_from_url():
         if current_user in room.users:
             # Юзер уже зашел туда с другой вкладки, просто закинь его
             return redirect()
-        password = request.form.get('password')
         if room.password and room.password != password:
             # Не вошел, ошибка пароля
             return redirect()
