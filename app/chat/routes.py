@@ -8,7 +8,7 @@ users = {}
 
 @bp.route("/chat")
 def index():
-    return render_template('chat/index.html/')
+    return render_template('chat/index.html')
 @socketio.on("connect")
 def handle_connect():
     print("Client connected!")
