@@ -52,8 +52,35 @@ body {
     max-width: 400px; /* Ширина блока плеера */
     text-align: center;
   }
-
+.text-accent {
+    color: #FF002D;
+}
 .seekbar {
 width: 100%; /* Расширение seekbar на всю ширину */
+}
+
+
+.modal {
+    position: fixed;
+    top: 10%;
+
+  }
+
+#chatContainer {
+position: fixed;
+bottom: 0;
+display: none;
+max-height: 40vh; /* Задайте максимальную высоту чата */
+min-height: 40vh; /* Задайте максимальную высоту чата */
+width: 100%;
+overflow-y: scroll;
+}
+
+#chatMessages {
+padding: 10px;
+}
+
+.border-black {
+    border: 2px solid #000000;
 }
 
