@@ -1,195 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-      crossorigin="anonymous"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
     <link rel="stylesheet" href="styles/main.css" />
     <title>Welcome</title>
-  </head>
+</head>
 
-  <body class="bg-dark">
+<body class="bg-dark">
     <nav class="navbar sticky-top justify-content-between">
-      <span> Название </span>
-      <button class="btn" onclick="openRoomMenu()">
-        <img src="res/list.svg" alt="list" class="img-fluid" />
-      </button>
+        <span> Название </span>
+        <button class="btn btn-link bg-transparent" onclick="openRoomMenu()">
+            <img src="res/list.svg" alt="list" class="img-fluid" />
+        </button>
     </nav>
 
-    <div
-      class="player-container d-flex flex-column align-items-center justify-content-center"
-    >
-      <div class="player container mx-4">
-        <div class="cover mx-auto">
-          <img
-            src="https://hosseinghanbari.ir/other/music-player/autumn.jpg"
-            alt=""
-          />
+    <div class="player-container d-flex flex-column align-items-center justify-content-center">
+        <div class="player container mx-4">
+            <div class="cover mx-auto">
+                <img src="https://hosseinghanbari.ir/other/music-player/autumn.jpg" alt="" />
+            </div>
+            <div class="title small mt-3">Autumn</div>
+            <div class="singer">Instrumental Music</div>
+            <input type="range" step="1" class="seekbar" value="0" min="0" max="100" oninput="handleSeekBar()" />
+            <img src="res/play-circle.svg" alt="Play" class="play-icon col-2" />
         </div>
-        <div class="title small mt-3">Autumn</div>
-        <div class="singer">Instrumental Music</div>
-        <input
-          type="range"
-          step="1"
-          class="seekbar"
-          value="0"
-          min="0"
-          max="100"
-          oninput="handleSeekBar()"
-        />
-        <img
-          src="res/play-circle.svg"
-          alt="Play"
-          class="play-icon col-2"
-          
-        />
-      </div>
     </div>
 
-    <div id="chatContainer" class="container-flex bg-light-dark" >
+    <div id="chatContainer" class="container-flex bg-light-dark">
         <button onclick="closeChat()">Закрыть</button>
-        <button onclick="expandChat()" >Развернуть</button>
+        <button onclick="expandChat()">Развернуть</button>
         <div class="chat-messages" id="chatMessages"></div>
-      </div>
-    
-      <div id="trackModal" class="modal">
+    </div>
+
+    <div id="trackModal" class="modal">
         <div class="tracklist col-10 bg-light-dark container rounded px-3 py-4 text-center border-black">
-          <button type="button" class="close" aria-label="Close" onclick="closeTrackList()">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4 class="fancy-font">Очередь</h4>   
-          <div class="tracklist-item bg-gray d-flex justify-content-between align-items-center" data-username="track-name">
-            <span class="mr-auto">track-name</span>
-            <button class="remove-button" onclick="removeTrack(this)">Remove</button>
-          </div>
-          <input type="file" class="file-input" id="fileInput" accept=".mp3, .ogg, .wav" onchange="addTrack()">
+            <button type="button" class="close" aria-label="Close" onclick="closeTrackList()">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="fancy-font">Очередь</h4>
+            <div class="tracklist-item bg-gray d-flex justify-content-between align-items-center"
+                data-username="track-name">
+                <span class="mr-auto">track-name</span>
+                <button class="remove-button" onclick="removeTrack(this)">Remove</button>
+            </div>
+            <input type="file" class="file-input" id="fileInput" accept=".mp3, .ogg, .wav" onchange="addTrack()">
         </div>
-      </div>
+    </div>
 
     <div class="message-input w-100 fixed-bottom">
         <div class="row p-0 m-0">
             <div class="col-9 p-0 m-0">
-            <input
-                type="text"
-                class="form-control"
-                id="messageInput"
-                placeholder="Введите текст..."
-                onfocus="openChat()"
-            />
+                <input type="text" class="form-control" id="messageInput" placeholder="Введите текст..."
+                    onfocus="openChat()" />
             </div>
             <div class="col-3 p-0 m-0">
-            <button type="button" class="btn btn-block" onclick="sendMessage()">Отправить</button>
+                <button type="button" class="btn btn-block" onclick="sendMessage()">Отправить</button>
             </div>
         </div>
     </div>
 
 
     <div id="roomMenuModal" class="modal ">
-      <div class="room-menu col-10 bg-light-dark container rounded px-3 py-4 text-center border-black">
-        <button type="button" class="close" aria-label="Close" onclick="closeRoomMenu()">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4 class="fancy-font">$roomName</h4>   
-        <button href="#" onclick="openParticipants()" class="btn btn-block bg-gray text-dark my-3">Список участников</button>
-        <button href="#" onclick="openTrackList()" class="btn btn-block bg-gray text-dark my-3">Плейлист</button>
-        <button href="#" class="btn btn-block bg-gray text-dark my-3">Поделиться</button>
-        <button href="#" class="btn btn-block bg-gray text-dark my-3">Выйти</button>
-        <button href="#" class="btn btn-block bg-dark text-accent my-3">Удалить</button>
-      </div>
+        <div class="room-menu col-10 bg-light-dark container rounded px-3 py-4 text-center border-black">
+            <button type="button" class="close btn btn-link " aria-label="Close" onclick="closeRoomMenu()">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="fancy-font">$roomName</h4>
+            <button href="#" onclick="openParticipants()" class="btn btn-block bg-gray text-dark my-3">Список
+                участников</button>
+            <button href="#" onclick="openTrackList()" class="btn btn-block bg-gray text-dark my-3">Плейлист</button>
+            <button href="#" class="btn btn-block bg-gray text-dark my-3">Поделиться</button>
+            <button href="#" class="btn btn-block bg-gray text-dark my-3">Выйти</button>
+            <button href="#" class="btn btn-block bg-dark text-accent my-3">Удалить</button>
+        </div>
     </div>
 
     <div id="participantsModal" class="modal">
         <div class="participants col-10 bg-light-dark container rounded px-3 py-4 text-center border-black">
-          <button type="button" class="close" aria-label="Close" onclick="closeParticipants()">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4 class="fancy-font">Участники</h4>   
-          <div class="participant-item bg-gray d-flex justify-content-between align-items-center" data-username="user1">
-            <span class="mr-auto">User 1</span>
-            <button class="remove-button" onclick="removeParticipant(this)">Remove</button>
-          </div>
+            <button type="button" class="close btn btn-link " aria-label="Close" onclick="closeParticipants()">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="fancy-font">Участники</h4>
+            <div class="participant-item bg-gray d-flex justify-content-between align-items-center"
+                data-username="user1">
+                <span class="mr-auto">User 1</span>
+                <button class="remove-button" onclick="removeParticipant(this)">Remove</button>
+            </div>
         </div>
-      </div>
-      
-      
+    </div>
+
+
     <script>
 
 
-      function openRoomMenu() {
-        var roomMenuModal = document.getElementById('roomMenuModal');
-        roomMenuModal.style.display = 'block';
-      }
-
-      function closeRoomMenu() {
-        var roomMenuModal = document.getElementById('roomMenuModal');
-        roomMenuModal.style.display = 'none';
-      }
-
-      function openParticipants() {
-        var ParticipantsModal = document.getElementById('participantsModal');
-        ParticipantsModal.style.display = 'block';
-        closeRoomMenu();
-      }
-
-
-      function closeParticipants() {
-        var ParticipantsModal = document.getElementById('participantsModal');
-        ParticipantsModal.style.display = 'none';
-        
-      }
-
-      window.onclick = function(event) {
-        var roomMenuModal = document.getElementById('roomMenuModal');
-        var participantsModal = document.getElementById('participantsModal');
-        if (event.target == roomMenuModal) {
-          roomMenuModal.style.display = 'none';
+        function openRoomMenu() {
+            var roomMenuModal = document.getElementById('roomMenuModal');
+            roomMenuModal.style.display = 'block';
         }
-        if (event.target == participantsModal) {
-            participantsModal.style.display = 'none';
-          }
-      }
 
-    function openTrackList() {
-        var trackModal = document.getElementById('trackModal');
-        trackModal.style.display = 'block';
-        closeRoomMenu();
-    }
-
-    function closeTrackList() {
-        var trackModal = document.getElementById('trackModal');
-        trackModal.style.display = 'none';
-    }
-
-    function openChat() {
-        var chatContainer = document.getElementById('chatContainer');
-        chatContainer.style.display = 'block';
-    }
-    function sendMessage() {
-        var messageInput = document.getElementById('messageInput');
-        var message = messageInput.value.trim();
-    
-        if (message !== '') {
-          var chatMessages = document.getElementById('chatMessages');
-          var newMessage = document.createElement('div');
-          newMessage.innerHTML = '<strong>You:</strong> ' + message;
-          chatMessages.appendChild(newMessage);
-          messageInput.value = '';
+        function closeRoomMenu() {
+            var roomMenuModal = document.getElementById('roomMenuModal');
+            roomMenuModal.style.display = 'none';
         }
-      }
-    
-      function closeChat() {
-        var chatContainer = document.getElementById('chatContainer');
-        chatContainer.style.display = 'none';
-      }
+
+        function openParticipants() {
+            var ParticipantsModal = document.getElementById('participantsModal');
+            ParticipantsModal.style.display = 'block';
+            closeRoomMenu();
+        }
+
+
+        function closeParticipants() {
+            var ParticipantsModal = document.getElementById('participantsModal');
+            ParticipantsModal.style.display = 'none';
+
+        }
+
+        window.onclick = function (event) {
+            var roomMenuModal = document.getElementById('roomMenuModal');
+            var participantsModal = document.getElementById('participantsModal');
+            if (event.target == roomMenuModal) {
+                roomMenuModal.style.display = 'none';
+            }
+            if (event.target == participantsModal) {
+                participantsModal.style.display = 'none';
+            }
+        }
+
+        function openTrackList() {
+            var trackModal = document.getElementById('trackModal');
+            trackModal.style.display = 'block';
+            closeRoomMenu();
+        }
+
+        function closeTrackList() {
+            var trackModal = document.getElementById('trackModal');
+            trackModal.style.display = 'none';
+        }
+
+        function openChat() {
+            var chatContainer = document.getElementById('chatContainer');
+            chatContainer.style.display = 'block';
+        }
+        function sendMessage() {
+            var messageInput = document.getElementById('messageInput');
+            var message = messageInput.value.trim();
+
+            if (message !== '') {
+                var chatMessages = document.getElementById('chatMessages');
+                var newMessage = document.createElement('div');
+                newMessage.innerHTML = '<strong>You:</strong> ' + message;
+                chatMessages.appendChild(newMessage);
+                messageInput.value = '';
+            }
+        }
+
+        function closeChat() {
+            var chatContainer = document.getElementById('chatContainer');
+            chatContainer.style.display = 'none';
+        }
     </script>
 
-  </body>
+</body>
+
 </html>
