@@ -15,7 +15,7 @@ def add_query_parameters(url, parameters):
 
 
 def generate_link_and_qr_code(data):
-    link = "https://mtc-u2hp.onrender.com/enter_room/"
+    link = "https://mtc-u2hp.onrender.com/enter_room_by_url/"
     token = base64.urlsafe_b64encode(str(data).encode()).decode()
     qr = qrcode.QRCode(
         version=1,
@@ -27,8 +27,8 @@ def generate_link_and_qr_code(data):
     qr.add_data(encode_link)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    current_directory = os.getcwd()
-    file_path = os.path.join(current_directory, 'qr_' + str(data["id"]) + ".png")
+    # current_directory = os.getcwd()
+    file_path = os.path.join("app\qrcodes", 'qr_' + str(data["id"]) + ".png")
     img.save(file_path)
     return encode_link, file_path
 

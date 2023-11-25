@@ -66,3 +66,26 @@ def logout_from_room(room_id):
         db.session.commit()
         # пользователь вышел, перенаправить из комнаты куда-нибудь
         return redirect()
+    
+
+@bp.route('/enter_room_by_url/', methods=['GET'])
+@login_required
+def enter_room_from_url():
+    room_id = request.args.get('id')
+    password = request.args.get('password')
+    room = Room.query.get(room_id)
+    if room:
+        if current_user in room.users:
+            # Юзер уже зашел туда с другой вкладки, просто закинь его
+            return redirect()
+        password = request.form.get('password')
+        if room.password and room.password != password:
+            # Не вошел, ошибка пароля
+            return redirect()
+        room.users.append(current_user)
+        db.session.commit()
+        # Вошел по паролю
+        return redirect()
+    else:
+        # комната уже удалена или недоступна по иным причинам, просто обновить
+        return redirect()
