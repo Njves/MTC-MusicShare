@@ -23,7 +23,6 @@ def login():
         if user.check_password(request.form.get('password')):
             login_user(user, remember=True)
             next = flask.request.args.get('next')
-            flash('Вы авторизованы')
             return flask.redirect(next or url_for('chat.index'))
     redirect(url_for('auth.login'))
     return render_template('auth/login.html')
@@ -38,6 +37,8 @@ def register():
             user.set_password(reg_password)
             db.session.add(user)
             db.session.commit()
+            flash('Вы зарегистрированны')
+            return redirect(url_for('auth.login'))
         else:
             print('Такой пользователь уже суещствует')
             return redirect(url_for('auth.login'))

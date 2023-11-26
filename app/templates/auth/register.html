@@ -1,14 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/main.css') }}" />
+  <title>Регистрация</title>
 </head>
-<body>
-  <form action="{{ url_for('auth.register') }}" method="POST">
-    <input type="text" name="login">
-    <input type="text" name="password">
-    <input type="submit">
-  </form>
+
+<body class="bg-dark max-height d-flex align-items-center justify-content-center">
+  <div class="col-10 bg-light-dark container accordion rounded py-4">
+    <h4 class="fancy-font text-center">Регистрация</h4>
+    <form action="{{ url_for('auth.register') }}" method="POST" class="px-2 pb-2">
+      <div class="form-group">
+        <input type="text" class="form-control" name="login" id="registerUsername" placeholder="Username">
+      </div>
+      <div class="form-group">
+        <input type="password" class="form-control" name="password" id="registerPassword" placeholder="Password">
+      </div>
+      <div class="row">
+        <button type="submit" class="btn btn-block bg-accent col-11 mx-auto text-light"
+          id="registerButton">Зарегистрироваться</button>
+      </div>
+    </form>
+
+    <!-- Ссылка для входа -->
+    <div class="text-center mt-1">
+      <a href="{{ url_for('auth.login') }}" class="text-light"><small>Уже есть аккаунт? Войти</small></a>
+    </div>
+  </div>
+
+
 </body>
+
 </html>
