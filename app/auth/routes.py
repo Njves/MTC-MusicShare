@@ -1,5 +1,5 @@
 import flask
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required
 
 from app import db, login_manager
@@ -13,15 +13,18 @@ def login():
     Auth page
     """
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form.get('login')).one()
+        user = User.query.filter_by(username=request.form.get('login')).first()
+        print(user)
         if user is None:
-            redirect(url_for('auth.login'))
-            return
+            flash('Такого пользователя не существует')
+            return redirect(url_for('auth.login'))
+        print(str(request.form.get('password')))
         user.check_password(str(request.form.get('password')))
         if user.check_password(request.form.get('password')):
             login_user(user, remember=True)
             next = flask.request.args.get('next')
-            return flask.redirect(next)
+            flash('Вы авторизованы')
+            return flask.redirect(next or url_for('chat.index'))
     redirect(url_for('auth.login'))
     return render_template('auth/login.html')
 
@@ -37,10 +40,11 @@ def register():
             db.session.commit()
         else:
             print('Такой пользователь уже суещствует')
+            return redirect(url_for('auth.login'))
     return render_template('auth/register.html')
 
 @bp.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.index'))
+    return redirect(url_for('auth.login'))

@@ -14,7 +14,7 @@
 <body class="bg-dark max-height d-flex align-items-center justify-content-center">
   <div class="col-10 bg-light-dark container accordion rounded py-4">
     <h4 class="fancy-font text-center">Вход</h4>
-    <form class="px-2 pb-2">
+    <form class="px-2 pb-2" method="POST" action="{{ url_for('auth.login') }}">
       <div class="form-group">
         <input type="email" class="form-control" id="loginEmail" aria-describedby="emailHelp" placeholder="Login">
       </div>
@@ -28,7 +28,7 @@
 
     <!-- Кнопка для регистрации -->
     <div class="text-center mt-1">
-      <a href="register.html" class="text-light" id="registerLink"><small>Зарегистрироваться</small></a>
+      <a href="{{ url_for('auth.reigster') }}" class="text-light" id="registerLink"><small>Зарегистрироваться</small></a>
     </div>
   </div>
 

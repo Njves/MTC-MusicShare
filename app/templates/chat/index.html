@@ -44,34 +44,42 @@
 </head>
 <body>
 <div id="landing">
-    <input type="text" id="username" placeholder="Username">
-        {% for room in current_user.room %}
-        <option value="{{ room.id }}">{{ room.id }}</option>
-        {% endfor %}
-
-
+    <p>Ваше имя: {{ current_user.username }}</p>
     <button id="join-btn">JOIN</button>
 </div>
 
 <div id="chat" style="display:none;">
-
+    <p>Ваше имя: {{ current_user.username }}</p>
     <ul id="chat-messages">
+
     </ul>
-    <input type="text" id="message" placeholder="Enter a Message">
+    <input type="text" id="message" placeholder="Enter a Message"><input type="submit" onclick="send()" value="Отправить"/>
 </div>
 <script>
+
+    function send() {
+        let message = document.getElementById("message").value;
+        socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
+        document.getElementById("message").value = "";
+    }
+    function add(username, text) {
+        let ul = document.getElementById("chat-messages");
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode(username + ": " + text));
+        ul.appendChild(li);
+        ul.scrolltop = ul.scrollHeight;
+    }
+    {% for i in history %}
+        add("{{ i.owner.username }}", "{{ i.text }}");
+    {% endfor %}
     const socket = io({autoConnect: false});
     var current_room = 0;
     document.getElementById("join-btn").addEventListener("click", function() {
-        let username = document.getElementById("username").value;
-        var selectElement = document.getElementById("listChoice");
-        var room = selectElement.value;
-        current_room = room;
+        let username = "{{ current_user.username }}"
         socket.connect();
         socket.on("connect", function() {
-            socket.emit("user_join", JSON.stringify({"username": username, "room": room}));
+            socket.emit("user_join", JSON.stringify({"username": username}));
         })
-
         document.getElementById("chat").style.display = "block";
         document.getElementById("landing").style.display = "none";
     })
@@ -79,8 +87,7 @@
     document.getElementById("message").addEventListener("keyup", function (event) {
         if (event.key == "Enter") {
             let message = document.getElementById("message").value;
-
-            socket.emit("new_message", JSON.stringify({'room': current_room, 'message': message}));
+            socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
             document.getElementById("message").value = "";
         }
     })

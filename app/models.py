@@ -1,31 +1,28 @@
+from datetime import datetime
+
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db, login_manager
 
 users_room = db.Table('users_room',
-                      db.Column('user_id', db.Integer, db.ForeignKey(
-                          'user.id', ondelete='CASCADE')),
+                      db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
                       db.Column('room_id', db.Integer, db.ForeignKey('room.id', ondelete='CASCADE')))
 
 playlist_songs = db.Table('playlist_songs',
-                          db.Column('playlist_id', db.Integer, db.ForeignKey(
-                              'playlist.id', ondelete='CASCADE')),
+                          db.Column('playlist_id', db.Integer, db.ForeignKey('playlist.id', ondelete='CASCADE')),
                           db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
 
 user_songs = db.Table("user_songs",
-                      db.Column('user_id', db.Integer, db.ForeignKey(
-                          'user.id', ondelete='CASCADE')),
+                      db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
                       db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
 
 user_playlists = db.Table("user_playlists",
-                          db.Column('user_id', db.Integer, db.ForeignKey(
-                              'user.id', ondelete='CASCADE')),
+                          db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
                           db.Column('playlist_id', db.Integer, db.ForeignKey('playlist.id', ondelete='CASCADE')))
 
 songs_in_room = db.Table("room_songs",
-                         db.Column('room_id', db.Integer, db.ForeignKey(
-                             'room.id', ondelete='CASCADE')),
+                         db.Column('room_id', db.Integer, db.ForeignKey('room.id', ondelete='CASCADE')),
                          db.Column('song_id', db.Integer, db.ForeignKey('song.id', ondelete='CASCADE')))
 
 
@@ -40,9 +37,9 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(128), nullable=False, default="")
     password_hash = db.Column(db.String(256), nullable=False)
     songs = db.relationship('Song', backref='owner', secondary=user_songs, lazy='dynamic')
-    playlists = db.relationship(
-        'Playlist', secondary=user_playlists, backref='owner', lazy='dynamic')
-
+    playlists = db.relationship('Playlist', secondary=user_playlists, backref='owner', lazy='dynamic')
+    messages = db.relationship('Message', backref='owner', lazy='dynamic')
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow, comment='last seen user in online')
     def __repr__(self) -> str:
         return f'User {self.id}, Username: {self.username}, email: {self.email}'
 
@@ -52,6 +49,16 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id', ondelete='CASCADE'))
+    text = db.Column(db.String(), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow, comment='last seen user in online')
+
+    def to_dict(self):
+        return {'id': self.id, 'sender_id': self.owner.username, 'text': self.text, 'date': self.date}
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)

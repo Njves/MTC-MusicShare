@@ -1,14 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Login</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style/main.css') }}" />
+  <title>Hello, world!</title>
 </head>
-<body>
-<form method="POST" action="{{ url_for('auth.login') }}">
-    <p><input type="text" name="login"/></p>
-    <p><input type="text" name="password"/></p>
-    <p><input type="submit"/></p>
-</form>
+
+
+<body class="bg-dark max-height d-flex align-items-center justify-content-center">
+
+  <div class="col-10 bg-light-dark container accordion rounded py-4">
+    <h4 class="fancy-font text-center">Вход</h4>
+    <form class="px-2 pb-2" method="POST" action="{{ url_for('auth.login') }}">
+      {% include "flash.html" %}
+      <div class="form-group">
+        <input type="text" class="form-control" id="loginEmail" aria-describedby="emailHelp" name="login" placeholder="Login">
+      </div>
+      <div class="form-group">
+        <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Password">
+      </div>
+      <div class="row">
+        <button type="submit" class="btn btn-block bg-accent col-11 mx-auto text-light" id="loginButton">Войти</button>
+      </div>
+    </form>
+
+    <!-- Кнопка для регистрации -->
+    <div class="text-center mt-1">
+      <a href="{{ url_for('auth.register') }}" class="text-light" id="registerLink"><small>Зарегистрироваться</small></a>
+    </div>
+  </div>
+
+
 </body>
+
 </html>
