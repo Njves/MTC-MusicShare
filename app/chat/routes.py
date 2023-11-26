@@ -35,7 +35,7 @@ def handle_user_join(msg):
     message = json.loads(msg)
     username = message['username']
     users[username] = request.sid
-    emit("chat", {"message": f'Челик {username} зашел в чят', "username": username})
+    emit("chat", {"message": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
 
 
 @socketio.on("new_message")
