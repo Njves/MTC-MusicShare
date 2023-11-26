@@ -42,7 +42,6 @@ def handle_user_join(msg):
 def handle_new_message(message):
     print(f"New message: {message}")
     msg = json.loads(message)
-
     username = None
     for user in users:
         if users[user] == request.sid:
@@ -50,4 +49,4 @@ def handle_new_message(message):
     message = Message(sender_id=User.query.filter_by(username=username).first().id, text=msg['message'])
     db.session.add(message)
     db.session.commit()
-    emit("chat", {"message": msg['message'], "username": username})
+    emit("chat", {"message": msg['message'], "username": username}, broadcast=True)

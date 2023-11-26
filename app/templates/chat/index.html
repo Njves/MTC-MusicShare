@@ -95,6 +95,7 @@
 
 
     socket.on("chat", function(data) {
+        console.log(data)
         let ul = document.getElementById("chat-messages");
         let li = document.createElement("li");
         li.appendChild(document.createTextNode(data["username"] + ": " + data["message"]));
