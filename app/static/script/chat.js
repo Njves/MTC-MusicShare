@@ -1,10 +1,12 @@
 const socket = io({autoConnect: false});
+let username = ''
 function create() {
     socket.connect();
     fetch('get-username').then(response => {
         return response.json()
     }).then(data => {
         socket.on("connect", function() {
+            username = data.username
             socket.emit("user_join", JSON.stringify({"username": data.username}));
         })
     })
@@ -38,7 +40,7 @@ function add(username, text) {
 document.getElementById("message").addEventListener("keyup", function (event) {
     if (event.key == "Enter") {
         let message = document.getElementById("message").value;
-        socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
+        socket.emit("new_message", JSON.stringify({'username': '', 'message': message}));
         document.getElementById("message").value = "";
     }
 })
