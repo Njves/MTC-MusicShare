@@ -3,7 +3,6 @@ from flask import Flask
 from flask_admin import Admin
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
 from sqlalchemy import MetaData
 
 from config import Config
@@ -17,10 +16,8 @@ convention = {
 }
 
 migrate = Migrate()
-login_manager = LoginManager()
 admin_app = Admin(name='MusicShare', template_mode='bootstrap3')
 db = SQLAlchemy(metadata=MetaData(naming_convention=convention))
-login_manager.login_view = 'auth.login'
 socketio = flask_socketio.SocketIO()
 
 
@@ -28,27 +25,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     migrate.init_app(app, db, render_as_batch=True)
-    login_manager.init_app(app)
     db.init_app(app)
     admin_app.init_app(app)
     socketio.init_app(app)
 
-    from app.auth import bp as auth_bp
-
-    app.register_blueprint(auth_bp)
-
-    from app.room import bp as room_bp
-
-    app.register_blueprint(room_bp)
-
     from app.chat import bp as chat_bp
-
     app.register_blueprint(chat_bp)
-
-    from app.player import bp as player_bp
-
-    app.register_blueprint(player_bp)
-
     return app
 
 

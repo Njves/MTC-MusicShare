@@ -33,75 +33,19 @@
             list-style: none;
         }
 
-        #landing {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 10px;
-        }
     </style>
 </head>
 <body>
 {% include "flash.html" %}
-<div id="landing">
-    <p>Ваше имя: {{ current_user.username }}</p>
-    <button id="join-btn">JOIN</button>
-</div>
-
-<div id="chat" style="display:none;">
-    <p>Ваше имя: {{ current_user.username }}</p>
+<div id="chat">
     <ul id="chat-messages">
 
     </ul>
     <input type="text" id="message" placeholder="Enter a Message"><input type="submit" onclick="send()" value="Отправить"/>
 </div>
+<script src="{{ url_for('static', filename='script/chat.js') }}"></script>
 <script>
-
-    function send() {
-        let message = document.getElementById("message").value;
-        socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
-        document.getElementById("message").value = "";
-    }
-    function add(username, text) {
-        let ul = document.getElementById("chat-messages");
-        let li = document.createElement("li");
-        li.appendChild(document.createTextNode(username + ": " + text));
-        ul.appendChild(li);
-        ul.scrolltop = ul.scrollHeight;
-    }
-    {% for i in history %}
-        add("{{ i.owner.username }}", "{{ i.text }}");
-    {% endfor %}
-    const socket = io({autoConnect: false});
-    var current_room = 0;
-    document.getElementById("join-btn").addEventListener("click", function() {
-        let username = "{{ current_user.username }}"
-        socket.connect();
-        socket.on("connect", function() {
-            socket.emit("user_join", JSON.stringify({"username": username}));
-        })
-        document.getElementById("chat").style.display = "block";
-        document.getElementById("landing").style.display = "none";
-    })
-
-    document.getElementById("message").addEventListener("keyup", function (event) {
-        if (event.key == "Enter") {
-            let message = document.getElementById("message").value;
-            socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
-            document.getElementById("message").value = "";
-        }
-    })
-
-
-    socket.on("chat", function(data) {
-        console.log(data)
-        let ul = document.getElementById("chat-messages");
-        let li = document.createElement("li");
-        li.appendChild(document.createTextNode(data["username"] + ": " + data["message"]));
-        ul.appendChild(li);
-        ul.scrolltop = ul.scrollHeight;
-    })
+    create()
 </script>
 </body>
 </html>

@@ -1,29 +1,40 @@
-from datetime import datetime
-
-from flask import request, render_template, jsonify
-from flask_login import login_required, current_user
-from flask_socketio import emit, join_room, leave_room
-from app import socketio, db
-from app.chat import bp
 import json
 
-from app.models import User, Message
+import flask
+from flask import request, render_template, redirect, jsonify, url_for
+from flask_socketio import emit
+
+from app import socketio, db
+from app.chat import bp
+from app.models import Message
 
 users = {}
 
 
-@bp.before_request
-def before_request():
-    if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
+@bp.route("/", methods=['GET', 'POST'])
+def enter():
+    messages = Message.query.all()
+    return render_template('chat/enter.html', history=messages)
+
+@bp.route("/get-username", methods=['GET', 'POST'])
+def get_username():
+    return jsonify({'username': flask.session['username']})
 
 
 @bp.route("/chat", methods=['GET', 'POST'])
-@login_required
 def index():
+    if request.method == 'POST':
+        flask.session['username'] = request.form['username']
+        flask.session.permanent = True
+        return redirect(url_for('chat.index'))
+    return render_template('chat/index.html')
+
+@bp.route("/get-history", methods=['GET'])
+def get_history():
     messages = Message.query.all()
-    return render_template('chat/index.html', history=messages)
+    messages = [msg.to_dict() for msg in messages]
+
+    return jsonify({'messages':messages})
 
 @socketio.on("connect")
 def handle_connect():
@@ -33,6 +44,7 @@ def handle_connect():
 @socketio.on("user_join")
 def handle_user_join(msg):
     message = json.loads(msg)
+    print(message)
     username = message['username']
     users[username] = request.sid
     emit("chat", {"message": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
@@ -46,7 +58,7 @@ def handle_new_message(message):
     for user in users:
         if users[user] == request.sid:
             username = user
-    message = Message(sender_id=User.query.filter_by(username=username).first().id, text=msg['message'])
+    message = Message(username=username, text=msg['message'])
     db.session.add(message)
     db.session.commit()
     emit("chat", {"message": msg['message'], "username": username}, broadcast=True)
