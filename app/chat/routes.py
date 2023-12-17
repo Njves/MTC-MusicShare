@@ -27,6 +27,8 @@ def index():
         flask.session['username'] = request.form['username']
         flask.session.permanent = True
         return redirect(url_for('chat.index'))
+    if not flask.session.get('username'):
+        return redirect('chat.enter')
     return render_template('chat/index.html')
 
 @bp.route("/get-history", methods=['GET'])
@@ -44,7 +46,6 @@ def handle_connect():
 @socketio.on("user_join")
 def handle_user_join(msg):
     message = json.loads(msg)
-    print(message)
     username = message['username']
     users[username] = request.sid
     emit("chat", {"message": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
@@ -52,7 +53,6 @@ def handle_user_join(msg):
 
 @socketio.on("new_message")
 def handle_new_message(message):
-    print(f"New message: {message}")
     msg = json.loads(message)
     username = None
     for user in users:

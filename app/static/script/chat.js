@@ -24,7 +24,7 @@ function get_history() {
 
 function send() {
     let message = document.getElementById("message").value;
-    socket.emit("new_message", JSON.stringify({'username': '{{ current_user.username }}', 'message': message}));
+    socket.emit("new_message", JSON.stringify({'message': message}));
     document.getElementById("message").value = "";
 }
 
@@ -39,9 +39,15 @@ function add(username, text) {
 document.getElementById("message").addEventListener("keyup", function (event) {
     if (event.key == "Enter") {
         let message = document.getElementById("message").value;
-        socket.emit("new_message", JSON.stringify({'username': '', 'message': message}));
+        socket.emit("new_message", JSON.stringify({'message': message}));
         document.getElementById("message").value = "";
     }
+})
+
+document.getElementById("send_msg").addEventListener('click', event => {
+    let message = document.getElementById("message").value;
+    socket.emit("new_message", JSON.stringify({'message': message}));
+    document.getElementById("message").value = "";
 })
 
 socket.on("chat", function(data) {
