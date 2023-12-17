@@ -5,12 +5,11 @@ function create() {
     fetch('get-username').then(response => {
         return response.json()
     }).then(data => {
-        socket.on("connect", function() {
-            username = data.username
-            socket.emit("user_join", JSON.stringify({"username": data.username}));
-        })
+        username = data.username
     })
-
+    socket.on("connect", function() {
+        socket.emit("user_join", JSON.stringify({"username": username}));
+    })
 }
 
 function get_history() {
