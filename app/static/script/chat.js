@@ -52,4 +52,3 @@ socket.on("chat", function(data) {
     ul.appendChild(li);
     ul.scrolltop = ul.scrollHeight;
 })
-get_history()
