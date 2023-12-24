@@ -1,21 +1,62 @@
 main {
-    margin-top: 16px
+    margin-top: 16px;
 }
+
 .window {
     border: #0a0a0a solid 1px;
     border-radius: 20px;
     width: 40%;
     display: flex;
-
+    height: 93vh;
     flex-direction: column;
-    margin-top: 16px;
-
+    position: relative;
+}
+.scroll-down {
+    display: block;
+    background-color: white;
+    border-radius: 8px !important;
+    border: 1px black solid;
+    position: absolute;
+    bottom: 50px;
+    right: 0;
+    cursor: pointer; /* Добавлено для указания на возможность взаимодействия с элементом */
+    z-index: 999;
+}
+.control-panel {
+    position: relative;
+    bottom: 0;
+    right: 5px;
+    left: 5px;
+    cursor: pointer; /* Добавлено для указания на возможность взаимодействия с элементом */
 }
 #chat-messages {
     list-style-type: none;
+    overflow-y: scroll;
+    width: 100%;
+    padding: 0;
+}
+#users-list {
+    list-style-type: none;
+}
+.container-online {
+    display: block;
+    position: absolute;
+}
+.online-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
 }
 button, input {
     width: fit-content;
     align-content: center;
     align-self: center;
+}
+.send-msg {
+    margin-bottom: 8px;
+}
+.send-msg {
+    border: 1px black solid;
+    margin: 0;
+    background-color: white;
 }

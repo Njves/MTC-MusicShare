@@ -1,9 +1,9 @@
 import json
+import datetime
 
 import flask
 from flask import request, render_template, redirect, jsonify, url_for
 from flask_socketio import emit
-
 from app import socketio, db
 from app.chat import bp
 from app.models import Message
@@ -15,6 +15,7 @@ users = {}
 def enter():
     messages = Message.query.all()
     return render_template('chat/enter.html', history=messages)
+
 
 @bp.route("/get-username", methods=['GET', 'POST'])
 def get_username():
@@ -31,12 +32,19 @@ def index():
         return redirect('chat.enter')
     return render_template('chat/index.html')
 
+
 @bp.route("/get-history", methods=['GET'])
 def get_history():
     messages = Message.query.all()
     messages = [msg.to_dict() for msg in messages]
+    return jsonify({'messages': messages})
 
-    return jsonify({'messages':messages})
+
+@bp.route("/get-online", methods=['GET'])
+def get_users_online():
+    print(users)
+    return jsonify(list(users.keys()))
+
 
 @socketio.on("connect")
 def handle_connect():
@@ -46,19 +54,33 @@ def handle_connect():
 @socketio.on("user_join")
 def handle_user_join(msg):
     message = json.loads(msg)
+    print(message)
     username = message['username']
     users[username] = request.sid
-    emit("chat", {"message": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
+    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
+    emit('join', {'username': username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
+
+
+@socketio.on("disconnect")
+def handle_user_leave():
+    leaved_user = None
+    for username in users:
+        if request.sid == users[username]:
+            del users[username]
+            leaved_user = username
+            break
+    emit('leave', {'username': username}, broadcast=True)
 
 
 @socketio.on("new_message")
 def handle_new_message(message):
     msg = json.loads(message)
+    print(msg)
     username = None
     for user in users:
         if users[user] == request.sid:
             username = user
-    message = Message(username=username, text=msg['message'])
+    message = Message(username=username, text=msg['text'])
     db.session.add(message)
     db.session.commit()
-    emit("chat", {"message": msg['message'], "username": username}, broadcast=True)
+    emit("chat", {"text": msg['text'], "username": username}, broadcast=True)

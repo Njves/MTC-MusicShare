@@ -12,21 +12,32 @@
 {% include "flash.html" %}
 <body>
 <main>
+
+
+    <div class="container-online">
+        <div class="container online-list">
+            <p class="text-primary font-monospace">Текущие пользователи в сети</p>
+            <ul id="users-list">
+
+            </ul>
+        </div>
+    </div>
     <p class="text-center text-primary font-monospace">Чатик</p>
     <div class="container window">
-        <ul id="chat-messages">
-        </ul>
-        <div class="input-group mb-3">
-            <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
+            <ul id="chat-messages">
+            </ul>
+        <div class="control-panel">
+            <div class="input-group mb-3">
+                <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
+                <button class="btn send-msg" id="send_msg"><img src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
+                <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
+            </div>
         </div>
-        <button class="btn btn-primary" id="send_msg">Отправить сообщение</button>
     </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='script/chat.js') }}"></script>
-<script>
-    create()
-    get_history()
-</script>
+<script type="module" src="{{ url_for('static', filename='script/chatView.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='script/chat.js') }}"></script>
+
 </body>
 </html>
