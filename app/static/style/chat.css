@@ -9,6 +9,7 @@ main {
     height: 93vh;
     flex-direction: column;
     position: relative;
+    word-wrap: break-word;
 }
 .scroll-down {
     display: block;

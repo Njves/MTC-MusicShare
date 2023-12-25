@@ -5,17 +5,19 @@ const chatViewInstance = new ChatView();
 
 class User {
     username = null;
-    constructor(username) {
+    color = null;
+    constructor(username, color) {
         this.username = username
+        this.color = color
     }
 
     toJson() {
-        return JSON.stringify({"username": this.username})
+        return JSON.stringify({"username": this.username, 'color': this.color})
     }
 
     fromJson(string) {
         let jsonObject = JSON.parse(string)
-        return new User(jsonObject['username'])
+        return new User(jsonObject['username'], jsonObject['color'])
     }
 }
 
@@ -139,9 +141,11 @@ class ChatController {
     }
 
     appendMessage(data) {
+        if(!data['text'])
+            return
         let li = document.createElement("li");
-
         let username_element = document.createElement('strong')
+        username_element.style.color = data['color']
         username_element.appendChild(document.createTextNode(data["username"]))
         li.appendChild(username_element);
         if(!data['date'])

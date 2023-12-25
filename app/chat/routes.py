@@ -19,13 +19,14 @@ def enter():
 
 @bp.route("/get-username", methods=['GET', 'POST'])
 def get_username():
-    return jsonify({'username': flask.session['username']})
+    return jsonify({'username': flask.session['username'], 'color': flask.session['color']})
 
 
 @bp.route("/chat", methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         flask.session['username'] = request.form['username']
+        flask.session['color'] = request.form['color']
         flask.session.permanent = True
         return redirect(url_for('chat.index'))
     if not flask.session.get('username'):
