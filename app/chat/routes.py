@@ -27,6 +27,8 @@ def index():
     if request.method == 'POST':
         if not request.form['username']:
             return redirect(url_for('chat.index'))
+        if len(request.form['username']) >= 30:
+            return redirect(url_for('chat.index'))
         flask.session['username'] = request.form['username']
         flask.session.permanent = True
         return redirect(url_for('chat.index'))
