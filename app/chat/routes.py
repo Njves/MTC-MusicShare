@@ -84,4 +84,4 @@ def handle_new_message(message):
     message = Message(username=username, text=msg['text'])
     db.session.add(message)
     db.session.commit()
-    emit("chat", {"text": msg['text'], "username": username}, broadcast=True)
+    emit("chat", {"text": msg['text'], "username": username, "date": str(message.date)}, broadcast=True)
