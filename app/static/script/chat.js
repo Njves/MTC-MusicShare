@@ -74,7 +74,8 @@ class ChatController {
         this.enterKeyListener()
         this.clickListener()
         this._chatWindow.addEventListener('scroll', (event) => {
-            if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop < this._chatWindow.clientHeight)) {
+            console.log(this._chatWindow.scrollHeight, this._chatWindow.scrollTop, this._chatWindow.clientHeight, this._chatWindow.scrollHeight - this._chatWindow.scrollTop)
+            if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
                 this._buttonScroll.style.display = 'block'
                 return;
             }
@@ -92,13 +93,13 @@ class ChatController {
         })
         this._socket.on('disconnect', (data) => {
             this._socket.emit("leave", this._currentUser.toJson());
-            console.log(data)
+
         })
         this._socket.on("chat", data => {
             this.appendMessage(data)
         })
         this._socket.on('leave', data => {
-            console.log(data)
+
             // Если пришло увдомление о выходи, удаляем из списка html и списка
             this.removeUserFromOnline(data['username'])
 
@@ -110,7 +111,6 @@ class ChatController {
     }
 
     removeUserFromOnline(username_leaved) {
-        console.log(this._onlineUsers)
         this._onlineListHtml.removeChild(this._onlineUsers.get(username_leaved))
         this._onlineUsers.delete(username_leaved)
     }
@@ -123,12 +123,30 @@ class ChatController {
 
     }
 
+    convetDate(date) {
+        let serverDate = new Date(date);
+        let timezoneOffset = serverDate.getTimezoneOffset();
+        let clientTime = new Date(serverDate.getTime() - (timezoneOffset * 60 * 1000));
+        return clientTime.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: false
+        });
+
+    }
+
     appendMessage(data) {
         let li = document.createElement("li");
 
         let username_element = document.createElement('strong')
         username_element.appendChild(document.createTextNode(data["username"]))
         li.appendChild(username_element);
+        if(!data['date'])
+            data['date'] = new Date().toDateString()
+        li.appendChild(document.createTextNode(` ${this.convetDate(data['date'])}`))
         li.appendChild(document.createElement('br'));
         li.appendChild(document.createTextNode(data["text"]))
 
@@ -160,7 +178,10 @@ class ChatController {
     addUserToOnlineList(username) {
         let li = document.createElement("li");
         li.id = username
-        li.appendChild(document.createTextNode(username));
+        if(username == this._currentUser.username)
+            li.appendChild(document.createTextNode('(Вы) ' + username))
+        else
+            li.appendChild(document.createTextNode(username));
         this._onlineListHtml.appendChild(li);
         this._onlineUsers.set(username, li);
     }
@@ -192,7 +213,7 @@ class ChatController {
 
     sendMessage() {
         let text = document.getElementById("message").value;
-        let message = new Message(this._currentUser, text, new Date().toDateString())
+        let message = new Message(this._currentUser, text, Math.floor(new Date().getTime() / 1000))
         this._socket.emit("new_message", message.toJson());
         document.getElementById("message").value = "";
     }
