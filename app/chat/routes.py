@@ -37,6 +37,7 @@ def index():
 def get_history():
     messages = Message.query.all()
     messages = [msg.to_dict() for msg in messages]
+    print(messages)
     return jsonify({'messages': messages})
 
 
@@ -57,7 +58,7 @@ def handle_user_join(msg):
     print(message)
     username = message['username']
     users[username] = request.sid
-    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username}, broadcast=True)
+    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
     emit('join', {'username': username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
 
 
