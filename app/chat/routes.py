@@ -21,6 +21,9 @@ def enter():
 def get_username():
     return jsonify({'username': flask.session['username']})
 
+@bp.route("/get-notify-message", methods=['GET'])
+def get_notify():
+    return url_for('static', filename='sound/msg_notify.mp3')
 
 @bp.route("/chat", methods=['GET', 'POST'])
 def index():
