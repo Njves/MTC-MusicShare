@@ -104,12 +104,13 @@ class ChatController {
 
         })
         this._socket.on('join', data => {
-            console.log(data)
+            this.addUserToOnlineList(data['username'])
         })
 
     }
 
     removeUserFromOnline(username_leaved) {
+        console.log(this._onlineUsers)
         this._onlineListHtml.removeChild(this._onlineUsers.get(username_leaved))
         this._onlineUsers.delete(username_leaved)
     }
