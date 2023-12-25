@@ -74,7 +74,6 @@ class ChatController {
         this.enterKeyListener()
         this.clickListener()
         this._chatWindow.addEventListener('scroll', (event) => {
-            console.log(this._chatWindow.scrollHeight, this._chatWindow.scrollTop, this._chatWindow.clientHeight, this._chatWindow.scrollHeight - this._chatWindow.scrollTop)
             if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
                 this._buttonScroll.style.display = 'block'
                 return;
@@ -89,28 +88,30 @@ class ChatController {
 
     subscribeOnEvent() {
         this._socket.on("connect", () => {
-            this._socket.emit("user_join", this._currentUser.toJson());
         })
-        this._socket.on('disconnect', (data) => {
-            this._socket.emit("leave", this._currentUser.toJson());
-
+        this._socket.on('disconnect', (reason) => {
+            if (reason === "io server disconnect") {
+                // the disconnection was initiated by the server, you need to reconnect manually
+                this._socket.connect();
+            }
         })
         this._socket.on("chat", data => {
             this.appendMessage(data)
         })
         this._socket.on('leave', data => {
-
             // Если пришло увдомление о выходи, удаляем из списка html и списка
+            console.log('leaved')
             this.removeUserFromOnline(data['username'])
-
         })
         this._socket.on('join', data => {
+            console.log(data)
             this.addUserToOnlineList(data['username'])
         })
-
     }
 
     removeUserFromOnline(username_leaved) {
+        if(!this._onlineUsers.get(username_leaved))
+            return
         this._onlineListHtml.removeChild(this._onlineUsers.get(username_leaved))
         this._onlineUsers.delete(username_leaved)
     }
@@ -161,9 +162,14 @@ class ChatController {
                 throw new Error('Server is response faield')
             return response.json()
         }).then(data => {
+            console.log(this._onlineUsers)
             data.forEach(user => {
                 if(this.isCurrentUser(user))
                     return;
+
+                for (let onlineUsersKey in this._onlineUsers.keys()) {
+                    console.log(onlineUsersKey)
+                }
                 this.addUserToOnlineList(user)
             })
         }).catch(error => {

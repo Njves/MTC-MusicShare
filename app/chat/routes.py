@@ -25,11 +25,13 @@ def get_username():
 @bp.route("/chat", methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        if not request.form['username']:
+            return redirect(url_for('chat.index'))
         flask.session['username'] = request.form['username']
         flask.session.permanent = True
         return redirect(url_for('chat.index'))
     if not flask.session.get('username'):
-        return redirect('chat.enter')
+        return redirect(url_for('chat.enter'))
     return render_template('chat/index.html')
 
 
@@ -49,17 +51,12 @@ def get_users_online():
 
 @socketio.on("connect")
 def handle_connect():
-    print("Client connected!")
-
-
-@socketio.on("user_join")
-def handle_user_join(msg):
-    message = json.loads(msg)
-    print(message)
-    username = message['username']
+    username = flask.session.get('username')
     users[username] = request.sid
-    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
+    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username, 'date': str(datetime.datetime.utcnow())},
+         broadcast=True)
     emit('join', {'username': username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
+
 
 
 @socketio.on("disconnect")
@@ -67,10 +64,10 @@ def handle_user_leave():
     leaved_user = None
     for username in users:
         if request.sid == users[username]:
-            del users[username]
             leaved_user = username
+            del users[username]
             break
-    emit('leave', {'username': username}, broadcast=True)
+    emit('leave', {'username': leaved_user}, broadcast=True)
 
 
 @socketio.on("new_message")
