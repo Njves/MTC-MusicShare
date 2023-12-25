@@ -13,24 +13,25 @@
 <body>
 <main>
 
+    <div class="container-fluid md wraper d-flex">
+        <div class="online-container container md col-2 d-flex flex-column" >
+            <div class="container online-list" >
+                <p class="text-primary font-monospace">Текущие пользователи в сети</p>
+                <ul id="users-list">
 
-    <div class="container-online">
-        <div class="container online-list">
-            <p class="text-primary font-monospace">Текущие пользователи в сети</p>
-            <ul id="users-list">
-
-            </ul>
+                </ul>
+            </div>
         </div>
-    </div>
-    <p class="text-center text-primary font-monospace">Чатик</p>
-    <div class="container window">
+        <div class="container sm col-12 window" >
+             <p class="text-center text-primary font-monospace">Чатик</p>
             <ul id="chat-messages">
             </ul>
-        <div class="control-panel">
-            <div class="input-group mb-3">
-                <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
-                <button class="btn send-msg" id="send_msg"><img src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
-                <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
+            <div class="control-panel">
+                <div class="input-group mb-3">
+                    <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
+                    <button class="btn send-msg" id="send_msg"><img src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
+                    <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
+                </div>
             </div>
         </div>
     </div>
