@@ -96,6 +96,8 @@ class ChatController {
             }
         })
         this._socket.on("chat", data => {
+            var notificationSound = new Audio("/static/sound/msg_notify.mp3");
+            notificationSound.play();
             this.appendMessage(data)
         })
         this._socket.on('leave', data => {
