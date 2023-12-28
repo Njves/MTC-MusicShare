@@ -1,5 +1,6 @@
 import json
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 import flask
 from flask import request, render_template, redirect, jsonify, url_for
@@ -21,9 +22,11 @@ def enter():
 def get_username():
     return jsonify({'username': flask.session['username']})
 
+
 @bp.route("/get-notify-message", methods=['GET'])
 def get_notify():
     return url_for('static', filename='sound/msg_notify.mp3')
+
 
 @bp.route("/chat", methods=['GET', 'POST'])
 def index():
@@ -58,10 +61,10 @@ def get_users_online():
 def handle_connect():
     username = flask.session.get('username')
     users[username] = request.sid
-    emit("chat", {"text": f'Челик {username} зашел в чят', "username": username, 'date': str(datetime.datetime.utcnow())},
+    emit("chat",
+         {"text": f'Челик {username} зашел в чят', "username": username, 'date': str(datetime.datetime.utcnow())},
          broadcast=True)
     emit('join', {'username': username, 'date': str(datetime.datetime.utcnow())}, broadcast=True)
-
 
 
 @socketio.on("disconnect")
@@ -74,7 +77,6 @@ def handle_user_leave():
             break
     emit('leave', {'username': leaved_user}, broadcast=True)
 
-
 @socketio.on("new_message")
 def handle_new_message(message):
     msg = json.loads(message)
@@ -83,7 +85,7 @@ def handle_new_message(message):
     for user in users:
         if users[user] == request.sid:
             username = user
-    message = Message(username=username, text=msg['text'])
+    message = Message(username=username, text=msg['text'], date=datetime.datetime.utcnow())
+    emit("chat", {"text": msg['text'], "username": username, "date": str(message.date)}, broadcast=True)
     db.session.add(message)
     db.session.commit()
-    emit("chat", {"text": msg['text'], "username": username, "date": str(message.date)}, broadcast=True)

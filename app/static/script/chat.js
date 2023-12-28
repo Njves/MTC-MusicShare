@@ -59,6 +59,7 @@ class ChatController {
     _onlineListHtml = null;
     _onlineUsers = null;
     _currentUser = null;
+    notificationSound = new Audio("/static/sound/msg_notify.mp3");
     _chatWindow = null;
     constructor() {
         this._socket = io({autoConnect: false});
@@ -84,6 +85,7 @@ class ChatController {
 
             this.scrollToBottom(this._chatWindow)
         })
+
     }
 
     subscribeOnEvent() {
@@ -96,8 +98,8 @@ class ChatController {
             }
         })
         this._socket.on("chat", data => {
-            var notificationSound = new Audio("/static/sound/msg_notify.mp3");
-            notificationSound.play();
+            if(data['username'] !== this._currentUser.username)
+                this.notificationSound.play();
             this.appendMessage(data)
         })
         this._socket.on('leave', data => {
