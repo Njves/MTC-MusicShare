@@ -1,9 +1,7 @@
 import json
 import datetime
-from concurrent.futures import ThreadPoolExecutor
-
 import flask
-from flask import request, render_template, redirect, jsonify, url_for
+from flask import request, render_template, redirect, jsonify, url_for, current_app
 from flask_socketio import emit
 from app import socketio, db
 from app.chat import bp
@@ -21,6 +19,9 @@ def enter():
 @bp.route("/get-username", methods=['GET', 'POST'])
 def get_username():
     return jsonify({'username': flask.session['username']})
+
+@bp.route("/get-rooms")
+def get_rooms():
 
 
 @bp.route("/get-notify-message", methods=['GET'])
@@ -47,13 +48,11 @@ def index():
 def get_history():
     messages = Message.query.all()
     messages = [msg.to_dict() for msg in messages]
-    print(messages)
     return jsonify({'messages': messages})
 
 
 @bp.route("/get-online", methods=['GET'])
 def get_users_online():
-    print(users)
     return jsonify(list(users.keys()))
 
 
@@ -77,15 +76,18 @@ def handle_user_leave():
             break
     emit('leave', {'username': leaved_user}, broadcast=True)
 
+def add_message(app, message):
+    with app.app_context():
+        db.session.add(message)
+        db.session.commit()
+
 @socketio.on("new_message")
 def handle_new_message(message):
     msg = json.loads(message)
-    print(msg)
     username = None
     for user in users:
         if users[user] == request.sid:
             username = user
     message = Message(username=username, text=msg['text'], date=datetime.datetime.utcnow())
     emit("chat", {"text": msg['text'], "username": username, "date": str(message.date)}, broadcast=True)
-    db.session.add(message)
-    db.session.commit()
+    socketio.start_background_task(add_message, current_app, message)

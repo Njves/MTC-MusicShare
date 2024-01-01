@@ -1,6 +1,7 @@
 import flask_socketio
 from flask import Flask
 from flask_admin import Admin
+from flask_caching import Cache
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
@@ -20,7 +21,6 @@ admin_app = Admin(name='MusicShare', template_mode='bootstrap3')
 db = SQLAlchemy(metadata=MetaData(naming_convention=convention))
 socketio = flask_socketio.SocketIO()
 
-
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -28,7 +28,6 @@ def create_app(config_class=Config):
     db.init_app(app)
     admin_app.init_app(app)
     socketio.init_app(app)
-
     from app.chat import bp as chat_bp
     app.register_blueprint(chat_bp)
     return app

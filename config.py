@@ -1,5 +1,8 @@
 import os
 import pathlib
+
+from flask_caching.backends import RedisCache
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -10,3 +13,8 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'some-secret-key'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MUSIC_DIR = pathlib.Path('app/static/music')
+    CACHE_TYPE = 'RedisCache'  # Flask-Caching related configs
+    CACHE_REDIS_HOST = 'localhost'
+    CACHE_REDIS_PORT = 6379
+    CACHE_DEFAULT_TIMEOUT = 300
+

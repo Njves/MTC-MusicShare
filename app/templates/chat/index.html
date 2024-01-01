@@ -14,26 +14,29 @@
 {% include "flash.html" %}
 <body>
 <main>
-
-    <div class="container-fluid wraper d-flex">
-        <div class="container online-container sm col-2 d-flex flex-column" >
-            <div class="container online-list" >
-                <p class="text-primary font-monospace">Текущие пользователи в сети</p>
-                <ul id="users-list">
-
-                </ul>
-            </div>
-        </div>
-        <div class="container md col-8 window">
-            <p class="text-center text-primary font-monospace">Чатик</p>
-            <ul id="chat-messages">
-            </ul>
-            <div class="control-panel">
-                <div class="input-group mb-3">
-                    <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
-                    <button class="btn send-msg" id="send_msg"><img src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
-                    <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
+    <div class="container">
+        <div class="row">
+            <div class="col online-container d-flex flex-column" >
+                <div class="container online-list" >
+                    <p class="text-primary text-center font-monospace">В сети</p>
+                    <ul id="users-list">
+                    </ul>
                 </div>
+            </div>
+            <div class="col-8 window">
+                <p class="text-center text-primary font-monospace">Чатик</p>
+                <ul id="chat-messages">
+                </ul>
+                <div class="control-panel">
+                    <div class="input-group mb-3">
+                        <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
+                        <button class="btn send-msg" id="send_msg"><img src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
+                        <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <p class="text-center text-primary">Комнаты</p>
             </div>
         </div>
     </div>
