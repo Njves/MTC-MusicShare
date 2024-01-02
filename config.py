@@ -1,7 +1,6 @@
 import os
 import pathlib
 
-from flask_caching.backends import RedisCache
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,4 +16,5 @@ class Config(object):
     CACHE_REDIS_HOST = 'localhost'
     CACHE_REDIS_PORT = 6379
     CACHE_DEFAULT_TIMEOUT = 300
-
+    UPLOAD_FOLDER = 'content'
+    MAX_CONTENT_LENGTH = 16 * 10 ** 6

@@ -10,7 +10,40 @@ main {
     flex-direction: column;
     position: relative;
     word-wrap: break-word;
+    box-shadow: 1px 1px 3px black;
 }
+#rooms-list {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    text-align: center;
+}
+
+.rooms-window {
+    height: fit-content;
+    border: 1px solid black;
+    border-radius: 16px;
+    margin-left: 16px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    box-shadow: 1px 1px 3px black;
+}
+
+.room {
+    display: block;
+    background-color: #0a6ebd;
+    color: white;
+    margin-top: 4px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.room:hover {
+    background-color: rgb(13,110,253);
+    transition: background-color 500ms ease !important;
+}
+
 .scroll-down {
     display: block;
     background-color: white;
@@ -34,14 +67,21 @@ main {
     overflow-y: scroll;
     width: 100%;
     padding: 0;
+
 }
 #users-list {
     list-style-type: none;
+    text-align: center;
+    padding: 0;
 }
-.online-list {
-    display: flex;
-    flex-direction: column;
-    justify-content: left;
+.online-container {
+    border: 1px solid black;
+    border-radius: 16px;
+    margin-right: 16px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    box-shadow: 1px 2px 5px black;
+
 }
 button, input {
     width: fit-content;
@@ -49,12 +89,39 @@ button, input {
     align-self: center;
 }
 .send-msg {
-    margin-bottom: 8px;
-}
-.send-msg {
-    border: 1px black solid;
+    border: 1px #dee2e6 solid;
     margin: 0;
     background-color: white;
+    border-bottom-right-radius: 16px !important;
+    border-top-right-radius: 16px !important;
+}
+.send-msg:hover {
+    border: 1px #dee2e6 solid;
+    background-color: rgb(13,110,253);
+    transition: background-color 500ms ease !important;
+
+}
+
+.attach:hover {
+    border: 1px #dee2e6 solid;
+    background-color: rgb(13,110,253);
+    transition: background-color 500ms ease !important;
+
+}
+
+.attach-img {
+    height: 100%;
+}
+
+.attach {
+    border: 1px #dee2e6 solid;
+    border-bottom-left-radius: 16px !important;
+    border-top-left-radius: 16px !important;
+}
+
+.online-list {
+    height: 93vh;
+    overflow-y: scroll;
 }
 
 @media screen and (max-width:540px) {

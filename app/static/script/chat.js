@@ -1,4 +1,4 @@
-import { ChatView } from './chatView.js';
+import {ChatView} from './chatView.js';
 
 // Now you can use the ChatView class
 const chatViewInstance = new ChatView();
@@ -54,6 +54,26 @@ class JoinMessage extends Message {
     }
 }
 
+class Room {
+    _name = null;
+    _id = null;
+    _members = null;
+    constructor(name, id, members) {
+        this.name = name;
+        this.id = id;
+        this.members = members
+    }
+
+    toJson() {
+        return JSON.stringify({'name': this._name, 'id': this._id, 'members': this._members})
+    }
+
+    fromJson(string) {
+        let jsonObject = JSON.parse(string)
+        return new Room(jsonObject['name'], jsonObject['id'], jsonObject['members'])
+    }
+}
+
 class ChatController {
     _socket = null;
     _onlineListHtml = null;
@@ -61,6 +81,11 @@ class ChatController {
     _currentUser = null;
     notificationSound = new Audio("/static/sound/msg_notify.mp3");
     _chatWindow = null;
+    _roomList = null;
+    _inputFileAttach = null;
+    _attachPreview = null;
+    _sendAttach = null;
+    _attachForm = null;
     constructor() {
         this._socket = io({autoConnect: false});
         this._onlineListHtml = document.getElementById('users-list')
@@ -69,11 +94,21 @@ class ChatController {
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
         this._socket.connect()
+        this._roomList = document.getElementById('rooms-list')
+        this._inputFileAttach = document.getElementById('attach-content-file')
+        this._attachPreview = document.getElementById('attach-preview')
+        this._sendAttach = document.getElementById('send-attach')
+        this._attachForm = document.getElementById('attach-form')
         this.subscribeOnEvent()
         this.getHistory()
         this.getOnlineUsers()
         this.enterKeyListener()
         this.clickListener()
+        this.getRooms()
+        this.attachListener()
+        this._inputFileAttach.addEventListener('change', () => {
+            this.showPreview()
+        })
         this._chatWindow.addEventListener('scroll', (event) => {
             if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
                 this._buttonScroll.style.display = 'block'
@@ -82,10 +117,20 @@ class ChatController {
             this._buttonScroll.style.display = 'none'
         })
         this._buttonScroll.addEventListener('click', event => {
-
             this.scrollToBottom(this._chatWindow)
         })
+    }
 
+    showPreview() {
+        let file = this._inputFileAttach.files[0]
+        this._attachPreview.src = URL.createObjectURL(file)
+        this._attachPreview.style.display = 'block'
+    }
+
+    attachListener() {
+        this._sendAttach.addEventListener('click', () => {
+            this._attachForm.submit()
+        })
     }
 
     subscribeOnEvent() {
@@ -128,7 +173,7 @@ class ChatController {
 
     }
 
-    convetDate(date) {
+    convertDate(date) {
         let serverDate = new Date(date);
         let timezoneOffset = serverDate.getTimezoneOffset();
         let clientTime = new Date(serverDate.getTime() - (timezoneOffset * 60 * 1000));
@@ -152,7 +197,7 @@ class ChatController {
         li.appendChild(username_element);
         if(!data['date'])
             data['date'] = new Date().toDateString()
-        li.appendChild(document.createTextNode(` ${this.convetDate(data['date'])}`))
+        li.appendChild(document.createTextNode(` ${this.convertDate(data['date'])}`))
         li.appendChild(document.createElement('br'));
         li.appendChild(document.createTextNode(data["text"]))
 
@@ -210,8 +255,28 @@ class ChatController {
 
     }
 
+    appendRoom(room) {
+        let li = document.createElement("li");
+        li.classList.add('room')
+        li.appendChild(document.createTextNode(room["name"]))
+        this._roomList.appendChild(li);
+    }
+
+    getRooms() {
+        fetch('get-rooms').then(response => {
+            if(!response.ok)
+                alert('Неудалось получить список комнат')
+            return response.json()
+        }).then(data => {
+            data.rooms.forEach(room => {
+                this.appendRoom(room)
+            })
+        })
+    }
     getHistory() {
         fetch('get-history').then(response => {
+            if(!response.ok)
+                alert('Неудалось получить историю сообщений')
             return response.json()
         }).then(data => {
             data.messages.forEach(msg => {
