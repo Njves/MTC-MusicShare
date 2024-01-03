@@ -98,6 +98,7 @@ class ChatController {
         this._inputFileAttach = document.getElementById('attach-content-file')
         this._attachPreview = document.getElementById('attach-preview')
         this._sendAttach = document.getElementById('send-attach')
+        this._cancelAttach = document.getElementById('cancel-attach')
         this._attachForm = document.getElementById('attach-form')
         this.subscribeOnEvent()
         this.getHistory()
@@ -108,6 +109,7 @@ class ChatController {
         this.attachListener()
         this._inputFileAttach.addEventListener('change', () => {
             this.showPreview()
+            console.log('show')
         })
         this._chatWindow.addEventListener('scroll', (event) => {
             if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
@@ -119,20 +121,48 @@ class ChatController {
         this._buttonScroll.addEventListener('click', event => {
             this.scrollToBottom(this._chatWindow)
         })
+        console.log('scroll')
     }
+    onAttachFormEvent(event) {
 
+    }
     showPreview() {
         let file = this._inputFileAttach.files[0]
         this._attachPreview.src = URL.createObjectURL(file)
         this._attachPreview.style.display = 'block'
     }
 
+    clearPreview() {
+        this._attachPreview.src = '#'
+        this._attachPreview.style.display = 'none'
+    }
     attachListener() {
         this._sendAttach.addEventListener('click', () => {
-            this._attachForm.submit()
+            this.clearPreview()
+            console.log('clear')
+        })
+        this._cancelAttach.addEventListener('click', () => {
+            this.clearPreview()
+            console.log('clear')
+        })
+        this._sendAttach.addEventListener('click', () => {
+            let data = new FormData()
+            data.append('attach_file', this._inputFileAttach.files[0])
+            data.append('username', this._currentUser.username)
+            data.append('text', document.getElementById('text-with-attach').value)
+            fetch('/attach', {
+                'method': 'POST',
+                body: data
+            }).then(response => {
+                return response.json()
+            }).then(data => {
+                console.log(data)
+            })
         })
     }
+    clearPreview() {
 
+    }
     subscribeOnEvent() {
         this._socket.on("connect", () => {
         })
@@ -192,17 +222,25 @@ class ChatController {
         if(!data['text'])
             return
         let li = document.createElement("li");
-        let username_element = document.createElement('strong')
+        let username_element = document.createElement('strong',)
         username_element.appendChild(document.createTextNode(data["username"]))
-        li.appendChild(username_element);
         if(!data['date'])
             data['date'] = new Date().toDateString()
+        li.appendChild(username_element)
         li.appendChild(document.createTextNode(` ${this.convertDate(data['date'])}`))
         li.appendChild(document.createElement('br'));
         li.appendChild(document.createTextNode(data["text"]))
-
+        li.appendChild(document.createElement('br'));
+        if(data['attachments']) {
+            data['attachments'].forEach(attachment => {
+                let attachmentImg = document.createElement('img')
+                attachmentImg.src = attachment['link']
+                attachmentImg.loading = 'lazy'
+                attachmentImg.width = 240
+                li.appendChild(attachmentImg)
+            })
+        }
         this._chatWindow.appendChild(li);
-        this.scrollToBottom(this._chatWindow)
     }
 
     getOnlineUsers() {
@@ -234,7 +272,7 @@ class ChatController {
     addUserToOnlineList(username) {
         let li = document.createElement("li");
         li.id = username
-        if(username == this._currentUser.username)
+        if(username === this._currentUser.username)
             li.appendChild(document.createTextNode('(Вы) ' + username))
         else
             li.appendChild(document.createTextNode(username));
@@ -282,9 +320,9 @@ class ChatController {
             data.messages.forEach(msg => {
                 this.appendMessage(msg)
             })
+
             this.scrollToBottom(this._chatWindow)
         })
-        let ul = document.getElementById("chat-messages");
     }
 
     sendMessage() {
@@ -296,7 +334,7 @@ class ChatController {
 
     enterKeyListener() {
         document.getElementById("message").addEventListener("keyup", event => {
-            if (event.key == "Enter") {
+            if (event.key === "Enter") {
                 this.sendMessage()
             }
         })
@@ -311,8 +349,9 @@ class ChatController {
 
     scrollToBottom(element) {
         element.scrollTop = element.scrollHeight;
+        console.log(element.scrollTop, element.scrollHeight)
     }
 
 }
 
-new ChatController()
+let controller = new ChatController()
