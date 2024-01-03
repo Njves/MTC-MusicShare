@@ -86,6 +86,7 @@ class ChatController {
     _attachPreview = null;
     _sendAttach = null;
     _attachForm = null;
+    _loader = null;
     constructor() {
         this._socket = io({autoConnect: false});
         this._onlineListHtml = document.getElementById('users-list')
@@ -100,6 +101,7 @@ class ChatController {
         this._sendAttach = document.getElementById('send-attach')
         this._cancelAttach = document.getElementById('cancel-attach')
         this._attachForm = document.getElementById('attach-form')
+        this._loader = document.getElementById('loader')
         this.subscribeOnEvent()
         this.getHistory()
         this.getOnlineUsers()
@@ -236,7 +238,10 @@ class ChatController {
                 let attachmentImg = document.createElement('img')
                 attachmentImg.src = attachment['link']
                 attachmentImg.loading = 'lazy'
-                attachmentImg.width = 240
+                attachmentImg.style.maxWidth = '100%'
+                attachmentImg.style.maxHeight = '100%'
+                attachmentImg.style.minWidth = '50%'
+                attachmentImg.style.minHeight = '50%'
                 li.appendChild(attachmentImg)
             })
         }
@@ -320,7 +325,7 @@ class ChatController {
             data.messages.forEach(msg => {
                 this.appendMessage(msg)
             })
-
+            this._loader.remove()
             this.scrollToBottom(this._chatWindow)
         })
     }

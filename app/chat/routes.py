@@ -1,7 +1,6 @@
 import json
 import datetime
 import os
-
 import flask
 import faker
 from werkzeug.security import safe_join
@@ -78,7 +77,6 @@ def index():
 def get_history():
     messages = Message.query.all()
     messages = [msg.to_dict() for msg in messages]
-    print(messages)
     return jsonify({'messages': messages})
 
 
@@ -96,7 +94,7 @@ def attach():
     file = request.files['attach_file']
     if file.filename == '':
         return {}, 400
-    filename = secure_filename(file.filename)
+    filename = f'{secure_filename(file.filename)}_{datetime.datetime.utcnow().date()}_{str(datetime.datetime.utcnow().time()).replace(":", ".")}'
     username = request.form['username']
     text = request.form['text']
     link = os.path.join(os.path.join('app', current_app.config['UPLOAD_FOLDER']), filename)
