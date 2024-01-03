@@ -10,3 +10,4 @@ class SecurityModelView(ModelView):
         return True
 
 admin_app.add_view(SecurityModelView(Message, db.session))
+admin_app.add_view(SecurityModelView(Attachment, db.session))
