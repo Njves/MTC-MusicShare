@@ -79,7 +79,7 @@ class ChatController {
     _onlineListHtml = null;
     _onlineUsers = null;
     _currentUser = null;
-    notificationSound = new Audio("/static/sound/msg_notify.mp3");
+    notificationSound = new Audio("/get-notify-message")
     _chatWindow = null;
     _roomList = null;
     _inputFileAttach = null;
@@ -87,14 +87,25 @@ class ChatController {
     _sendAttach = null;
     _attachForm = null;
     _loader = null;
+    _searchForm = null;
+    _searchRun = null;
+    _roomsModels = null;
+    _currentRoom = null;
     constructor() {
         this._socket = io({autoConnect: false});
         this._onlineListHtml = document.getElementById('users-list')
         this._onlineUsers = new Map()
-        this.getCurrentUser().then(username => this._currentUser = username)
+        this.getCurrentUser().then(user => {
+            this._currentUser = user['username']
+            this._currentRoom = user['room']['name']
+            this.getRooms().then(rooms => {
+                this.highLightCurrentRoom(this._currentRoom)
+            })
+        })
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
         this._socket.connect()
+        this._roomsModels = new Map()
         this._roomList = document.getElementById('rooms-list')
         this._inputFileAttach = document.getElementById('attach-content-file')
         this._attachPreview = document.getElementById('attach-preview')
@@ -102,42 +113,71 @@ class ChatController {
         this._cancelAttach = document.getElementById('cancel-attach')
         this._attachForm = document.getElementById('attach-form')
         this._loader = document.getElementById('loader')
+        this._searchForm = document.getElementById('search-form')
+        this._searchRun = document.getElementById('search-run')
         this.subscribeOnEvent()
         this.getHistory()
         this.getOnlineUsers()
         this.enterKeyListener()
         this.clickListener()
-        this.getRooms()
+
         this.attachListener()
         this._inputFileAttach.addEventListener('change', () => {
             this.showPreview()
             console.log('show')
         })
         this._chatWindow.addEventListener('scroll', (event) => {
-            if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
-                this._buttonScroll.style.display = 'block'
-                return;
-            }
+            if(this._chatWindow.scrollHeight - this._chatWindow.scrollTop)
+                if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
+                    this._buttonScroll.style.display = 'block'
+                    return;
+                }
             this._buttonScroll.style.display = 'none'
         })
+
         this._buttonScroll.addEventListener('click', event => {
             this.scrollToBottom(this._chatWindow)
         })
+        this._searchRun.addEventListener('click', event => {
+
+        })
         console.log('scroll')
     }
-    onAttachFormEvent(event) {
 
-    }
     showPreview() {
         let file = this._inputFileAttach.files[0]
         this._attachPreview.src = URL.createObjectURL(file)
         this._attachPreview.style.display = 'block'
     }
 
+    highLightCurrentRoom(currentRoom) {
+        console.log(currentRoom)
+        this._roomsModels.forEach((value, key, map) => {
+            if(currentRoom === value) {
+                key.classList.add('room-hightlights')
+            }
+        })
+    }
+
+    searchMessages() {
+        fetch('/search-messages?' + new URLSearchParams({
+            username: this._currentUser,
+            query: this._searchForm.value,
+        })).then((response) => {
+            if(!response.ok)
+                alert('Неудалось запустить поиск')
+            return response.json()
+        }).then(data => {
+            return data
+        }).catch(error => {
+            throw new Error(`Search message ${error}`)
+        })
+    }
     clearPreview() {
         this._attachPreview.src = '#'
         this._attachPreview.style.display = 'none'
     }
+
     attachListener() {
         this._sendAttach.addEventListener('click', () => {
             this.clearPreview()
@@ -162,11 +202,10 @@ class ChatController {
             })
         })
     }
-    clearPreview() {
 
-    }
     subscribeOnEvent() {
         this._socket.on("connect", () => {
+
         })
         this._socket.on('disconnect', (reason) => {
             if (reason === "io server disconnect") {
@@ -186,7 +225,7 @@ class ChatController {
         })
         this._socket.on('join', data => {
             console.log(data)
-            this.addUserToOnlineList(data['username'])
+            this.addUserToOnlineList(data['username'], data['room'])
         })
     }
 
@@ -197,12 +236,23 @@ class ChatController {
         this._onlineUsers.delete(username_leaved)
     }
 
-    onUserJoin() {
-
-    }
-
-    onUserLeaved(leavedUser) {
-
+    getHistoryRoom(element) {
+        this._loader.style.display = 'block !important'
+        let room = this._roomsModels.get(element)
+        fetch(`/get-history/${room}`).then((response) => {
+            if(!response.ok)
+                alert('Неудалось получить сообщение из комнаты')
+            return response.json()
+        }).then((data) => {
+            while(this._chatWindow.firstChild) {
+                this._chatWindow.firstChild.remove()
+            }
+            data.messages.forEach(msg => {
+                this.appendMessage(msg)
+            })
+            this._loader.style.display = 'none !important'
+            this.scrollToBottom(this._chatWindow)
+        })
     }
 
     convertDate(date) {
@@ -217,7 +267,6 @@ class ChatController {
             minute: 'numeric',
             hour12: false
         });
-
     }
 
     appendMessage(data) {
@@ -238,14 +287,13 @@ class ChatController {
                 let attachmentImg = document.createElement('img')
                 attachmentImg.src = attachment['link']
                 attachmentImg.loading = 'lazy'
-                attachmentImg.style.maxWidth = '100%'
-                attachmentImg.style.maxHeight = '100%'
-                attachmentImg.style.minWidth = '50%'
-                attachmentImg.style.minHeight = '50%'
+                attachmentImg.style.maxWidth = '540px'
+                attachmentImg.style.minWidth = '340px'
                 li.appendChild(attachmentImg)
             })
         }
         this._chatWindow.appendChild(li);
+        this.scrollToBottom(this._chatWindow)
     }
 
     getOnlineUsers() {
@@ -254,31 +302,26 @@ class ChatController {
                 throw new Error('Server is response faield')
             return response.json()
         }).then(data => {
-            console.log(this._onlineUsers)
             data.forEach(user => {
                 if(this.isCurrentUser(user))
                     return;
-
-                for (let onlineUsersKey in this._onlineUsers.keys()) {
-                    console.log(onlineUsersKey)
-                }
                 this.addUserToOnlineList(user)
             })
         }).catch(error => {
             throw new Error(`User is invalid ${error}`)
         })
-
     }
 
     isCurrentUser(username) {
         return this._currentUser === username
     }
 
-    addUserToOnlineList(username) {
+    addUserToOnlineList(username, room) {
         let li = document.createElement("li");
         li.id = username
-        if(username === this._currentUser.username)
+        if(username === this._currentUser) {
             li.appendChild(document.createTextNode('(Вы) ' + username))
+        }
         else
             li.appendChild(document.createTextNode(username));
         this._onlineListHtml.appendChild(li);
@@ -291,22 +334,26 @@ class ChatController {
                 throw new Error('Server is response faield')
             return response.json()
         }).then(data => {
-            return new User(data.username)
+            return data
         }).catch(error => {
             throw new Error(`User is invalid ${error}`)
         })
-
     }
 
     appendRoom(room) {
         let li = document.createElement("li");
         li.classList.add('room')
+        li.classList.add('room')
         li.appendChild(document.createTextNode(room["name"]))
         this._roomList.appendChild(li);
+        li.addEventListener('click', (event) => {
+            this.getHistoryRoom(event.target)
+        })
+        this._roomsModels.set(li, room['name'])
     }
 
     getRooms() {
-        fetch('get-rooms').then(response => {
+        return fetch('get-rooms').then(response => {
             if(!response.ok)
                 alert('Неудалось получить список комнат')
             return response.json()
@@ -314,8 +361,12 @@ class ChatController {
             data.rooms.forEach(room => {
                 this.appendRoom(room)
             })
+            return data
+        }).catch(error => {
+            throw new Error(`getRooms is invalid ${error}`)
         })
     }
+
     getHistory() {
         fetch('get-history').then(response => {
             if(!response.ok)
@@ -347,14 +398,12 @@ class ChatController {
 
     clickListener() {
         document.getElementById("send_msg").addEventListener('click', event => {
-            console.log('Клик')
             this.sendMessage()
         })
     }
 
     scrollToBottom(element) {
         element.scrollTop = element.scrollHeight;
-        console.log(element.scrollTop, element.scrollHeight)
     }
 
 }

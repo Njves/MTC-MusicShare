@@ -41,7 +41,7 @@
     <div class="container">
         <div class="row">
             <div class="col online-container">
-                <div class="container online-list" >
+                <div class="container online-list">
                     <p class="text-primary text-center font-monospace">В сети</p>
                     <ul id="users-list">
                     </ul>
@@ -49,6 +49,10 @@
             </div>
             <div class="col-sm-8 window">
                 <p class="text-center text-primary font-monospace">Чатик</p>
+                <div class="input-group mb-3">
+                    <input id="search-form" type="text" class="form-control" placeholder="Поиск" aria-label="Поиск" aria-describedby="basic-addon1">
+                    <button type="button" class="btn btn-secondary" id="search-run">Искать</button>
+                </div>
                 <ul id="chat-messages">
                 </ul>
                 <div class="d-flex justify-content-center m-2" id="loader">

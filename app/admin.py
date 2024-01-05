@@ -11,3 +11,4 @@ class SecurityModelView(ModelView):
 
 admin_app.add_view(SecurityModelView(Message, db.session))
 admin_app.add_view(SecurityModelView(Attachment, db.session))
+admin_app.add_view(SecurityModelView(Room, db.session))

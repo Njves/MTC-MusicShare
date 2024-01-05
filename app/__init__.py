@@ -20,6 +20,7 @@ admin_app = Admin(name='MusicShare', template_mode='bootstrap3')
 db = SQLAlchemy(metadata=MetaData(naming_convention=convention))
 socketio = flask_socketio.SocketIO()
 
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
