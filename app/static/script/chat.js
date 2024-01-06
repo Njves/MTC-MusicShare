@@ -23,19 +23,21 @@ class Message {
     _senderUsername = null;
     _text = null;
     _date = null
-    constructor(senderUsername, text, date) {
+    _roomId = null;
+    constructor(senderUsername, text, date, roomId) {
         this._senderUsername = senderUsername;
         this._text = text;
         this._date = date;
+        this._roomId = roomId;
     }
 
     toJson() {
-        return JSON.stringify({"username": this._senderUsername, 'text': this._text, 'date': this._date})
+        return JSON.stringify({"username": this._senderUsername, 'text': this._text, 'date': this._date, 'room_id': this._roomId})
     }
 
     fromJson(string) {
         let jsonObject = JSON.parse(string)
-        return new Message(jsonObject['username'], jsonObject['text'], jsonObject['date'])
+        return new Message(jsonObject['username'], jsonObject['text'], jsonObject['date'], jsonObject['room_id'])
     }
 }
 
@@ -87,20 +89,29 @@ class ChatController {
     _sendAttach = null;
     _attachForm = null;
     _loader = null;
+    _loaderRooms = null;
+    _loaderOnline = null;
     _searchForm = null;
     _searchRun = null;
     _roomsModels = null;
     _currentRoom = null;
+    _highLightedElement = null;
     constructor() {
         this._socket = io({autoConnect: false});
         this._onlineListHtml = document.getElementById('users-list')
         this._onlineUsers = new Map()
         this.getCurrentUser().then(user => {
+
             this._currentUser = user['username']
-            this._currentRoom = user['room']['name']
+            this._currentRoom = user['room']
+            console.log(this._currentRoom)
+            console.log(this._currentUser)
+            this.getOnlineUsers(user['username'])
+            this.getHistory()
             this.getRooms().then(rooms => {
                 this.highLightCurrentRoom(this._currentRoom)
             })
+
         })
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
@@ -113,11 +124,11 @@ class ChatController {
         this._cancelAttach = document.getElementById('cancel-attach')
         this._attachForm = document.getElementById('attach-form')
         this._loader = document.getElementById('loader')
+        this._loaderRooms = document.getElementById('loaderRooms')
+        this._loaderOnline = document.getElementById('loaderOnline')
         this._searchForm = document.getElementById('search-form')
         this._searchRun = document.getElementById('search-run')
         this.subscribeOnEvent()
-        this.getHistory()
-        this.getOnlineUsers()
         this.enterKeyListener()
         this.clickListener()
 
@@ -150,11 +161,18 @@ class ChatController {
         this._attachPreview.style.display = 'block'
     }
 
-    highLightCurrentRoom(currentRoom) {
-        console.log(currentRoom)
+    roomIsEquals(room, anotherRoom) {
+        return Object.entries(room).toString() === Object.entries(anotherRoom).toString()
+    }
+
+    async highLightCurrentRoom(currentRoom) {
         this._roomsModels.forEach((value, key, map) => {
-            if(currentRoom === value) {
-                key.classList.add('room-hightlights')
+            // Какая то проверка
+            if(this.roomIsEquals(this._currentRoom, value)) {
+                key.style.backgroundColor = '#032f4f'
+                key.style.pointerEvents = 'none'
+                this._highLightedElement = key
+                console.log('highlight')
             }
         })
     }
@@ -216,7 +234,15 @@ class ChatController {
         this._socket.on("chat", data => {
             if(data['username'] !== this._currentUser.username)
                 this.notificationSound.play();
-            this.appendMessage(data)
+            if(this._currentRoom['id'] === data['room_id']) {
+                this.appendMessage(data)
+            }
+            this._roomsModels.forEach((value, key, map) => {
+                console.log(this._currentRoom, data['room_id'])
+                if(value['id'] === data['room_id'] && this._currentRoom['id'] !== data['room_id']) {
+                    key.innerHTML = `${key.innerHTML}+`
+                }
+            })
         })
         this._socket.on('leave', data => {
             // Если пришло увдомление о выходи, удаляем из списка html и списка
@@ -224,24 +250,32 @@ class ChatController {
             this.removeUserFromOnline(data['username'])
         })
         this._socket.on('join', data => {
-            console.log(data)
             this.addUserToOnlineList(data['username'], data['room'])
         })
     }
 
-    removeUserFromOnline(username_leaved) {
+    async removeUserFromOnline(username_leaved) {
         if(!this._onlineUsers.get(username_leaved))
             return
         this._onlineListHtml.removeChild(this._onlineUsers.get(username_leaved))
         this._onlineUsers.delete(username_leaved)
     }
 
-    getHistoryRoom(element) {
+    async onClickRoom(element) {
         this._loader.style.display = 'block !important'
+        this._highLightedElement.style.backgroundColor = '#0a6ebd'
+        this._highLightedElement.style.pointerEvents = 'auto'
         let room = this._roomsModels.get(element)
-        fetch(`/get-history/${room}`).then((response) => {
+        this._currentRoom = room
+        await this.highLightCurrentRoom(this._currentRoom)
+        await this.getRoomHistory(room)
+    }
+
+    async getRoomHistory(room) {
+        fetch(`/get-history/${room['name']}`).then((response) => {
             if(!response.ok)
                 alert('Неудалось получить сообщение из комнаты')
+            console.log('get-history')
             return response.json()
         }).then((data) => {
             while(this._chatWindow.firstChild) {
@@ -250,10 +284,12 @@ class ChatController {
             data.messages.forEach(msg => {
                 this.appendMessage(msg)
             })
-            this._loader.style.display = 'none !important'
+
             this.scrollToBottom(this._chatWindow)
         })
+
     }
+
 
     convertDate(date) {
         let serverDate = new Date(date);
@@ -269,7 +305,7 @@ class ChatController {
         });
     }
 
-    appendMessage(data) {
+    async appendMessage(data) {
         if(!data['text'])
             return
         let li = document.createElement("li");
@@ -297,12 +333,14 @@ class ChatController {
     }
 
     getOnlineUsers() {
+        this.showLoader(this._loaderOnline)
         fetch('get-online').then(response => {
             if(!response.ok)
                 throw new Error('Server is response faield')
             return response.json()
         }).then(data => {
             data.forEach(user => {
+                this.hideLoader(this._loaderOnline)
                 if(this.isCurrentUser(user))
                     return;
                 this.addUserToOnlineList(user)
@@ -328,8 +366,8 @@ class ChatController {
         this._onlineUsers.set(username, li);
     }
 
-    getCurrentUser() {
-        return fetch('get-username').then(response => {
+    async getCurrentUser() {
+        return fetch('get-current-user').then(response => {
             if(!response.ok)
                 throw new Error('Server is response faield')
             return response.json()
@@ -343,21 +381,22 @@ class ChatController {
     appendRoom(room) {
         let li = document.createElement("li");
         li.classList.add('room')
-        li.classList.add('room')
         li.appendChild(document.createTextNode(room["name"]))
         this._roomList.appendChild(li);
         li.addEventListener('click', (event) => {
-            this.getHistoryRoom(event.target)
+            this.onClickRoom(event.target)
         })
-        this._roomsModels.set(li, room['name'])
+        this._roomsModels.set(li, room)
     }
 
-    getRooms() {
+    async getRooms() {
+        this.showLoader(this._loaderRooms)
         return fetch('get-rooms').then(response => {
             if(!response.ok)
                 alert('Неудалось получить список комнат')
             return response.json()
         }).then(data => {
+            this.hideLoader(this._loaderRooms)
             data.rooms.forEach(room => {
                 this.appendRoom(room)
             })
@@ -366,24 +405,33 @@ class ChatController {
             throw new Error(`getRooms is invalid ${error}`)
         })
     }
+    showLoader(loader) {
+        loader.classList.remove('d-none')
+    }
 
-    getHistory() {
-        fetch('get-history').then(response => {
+    hideLoader(loader) {
+        loader.classList.add('d-none')
+    }
+    async getHistory() {
+        this.showLoader(this._loader)
+        fetch(`get-history/${this._currentRoom['name']}`).then(response => {
             if(!response.ok)
                 alert('Неудалось получить историю сообщений')
             return response.json()
         }).then(data => {
+            this.hideLoader(this._loader)
+            this._currentRoom = data
             data.messages.forEach(msg => {
                 this.appendMessage(msg)
             })
-            this._loader.remove()
             this.scrollToBottom(this._chatWindow)
         })
+        this._loader.style.display = 'none !important'
     }
 
     sendMessage() {
         let text = document.getElementById("message").value;
-        let message = new Message(this._currentUser, text, Math.floor(new Date().getTime() / 1000))
+        let message = new Message(this._currentUser, text, Math.floor(new Date().getTime() / 1000), this._currentRoom.id)
         this._socket.emit("new_message", message.toJson());
         document.getElementById("message").value = "";
     }

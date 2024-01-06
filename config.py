@@ -18,3 +18,4 @@ class Config(object):
     CACHE_DEFAULT_TIMEOUT = 300
     UPLOAD_FOLDER = 'content'
     MAX_CONTENT_LENGTH = 16 * 10 ** 6
+    SEND_FILE_MAX_AGE_DEFAULT = 300

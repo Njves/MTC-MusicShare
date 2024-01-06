@@ -34,6 +34,8 @@ def enter():
     Main enter page
     :return:
     """
+    if flask.session.get('username'):
+        return redirect(url_for('chat.index'))
     return render_template('chat/enter.html')
 
 
@@ -59,7 +61,7 @@ def get_current_room():
     return jsonify(room.to_dict())
 
 
-@bp.route("/get-username", methods=['GET', 'POST'])
+@bp.route("/get-current-user", methods=['GET', 'POST'])
 def get_username():
     """
     Return username from current server session
@@ -67,7 +69,8 @@ def get_username():
     """
     if not flask.session.get('username'):
         return flask.abort(404)
-    return jsonify({'username': flask.session['username'], 'room': Room.query.filter_by(id=flask.session.get('current_room')).first().to_dict()})
+    return jsonify({'username': flask.session['username'],
+                    'room': Room.query.filter_by(id=flask.session.get('current_room')).first().to_dict()})
 
 
 @bp.route("/get-rooms")
@@ -176,7 +179,7 @@ def get_history_by_room_name(room_name=None):
     if not room:
         return flask.abort(404)
     flask.session['current_room'] = room.id
-    return jsonify({'messages': [message.to_dict() for message in room.messages]})
+    return jsonify(room.to_dict())
 
 
 @bp.route("/get-online", methods=['GET'])
@@ -245,6 +248,6 @@ def handle_new_message(message):
     for user in users:
         if users[user] == request.sid:
             username = user
-    message = Message(username=username, text=msg['text'], date=datetime.datetime.utcnow())
+    message = Message(username=username, text=msg['text'], date=datetime.datetime.utcnow(), room_id=msg['room_id'])
     emit("chat", message.to_dict(), broadcast=True)
     socketio.start_background_task(add_message, current_app._get_current_object(), message)
