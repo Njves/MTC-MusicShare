@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from app import socketio, db
 from app.chat import bp
 from app.models import Message, Room, Attachment
-
+# from app.cache import cache_html, cache_rooms
 users = {}
 fake = faker.Faker()
 
@@ -79,7 +79,10 @@ def get_rooms():
     Return current available rooms
     :return: json with list of rooms
     """
-    return jsonify({'rooms': [room.to_dict() for room in Room.query.all()]})
+    rooms = [room.to_dict() for room in Room.query.all()]
+    response = jsonify({'rooms': rooms})
+    # response.headers['Cache-Control'] = 'public,max-age=300'
+    return response
 
 
 @bp.route("/create-room", methods=['POST'])
@@ -89,36 +92,14 @@ def create_room():
     :return: new room object json
     """
     username = request.json.get('username')
-    if not username:
-        return flask.abort(403)
-    rooms_names = ['Python', 'Java', 'C#', 'C', 'C++', 'Andrey']
-    new_rooms = []
-    for room_name in rooms_names:
-        print(Room.query.filter_by(name=room_name).first())
-        if Room.query.filter_by(name=room_name).first():
-            continue
-        new_rooms.append(Room(name=room_name))
-        db.session.add(new_rooms[-1])
-        new_rooms[-1] = new_rooms[-1].to_dict()
-    db.session.commit()
-    return jsonify({'rooms': new_rooms})
-
-
-@bp.route("/create-room/<room_name>", methods=['POST'])
-def create_room_with_name():
-    """
-    Create new room and return it object
-    :return: new room object json
-    """
-    username = request.json.get('username')
     room_name = request.json.get('room_name')
     if not username:
         return flask.abort(403)
-    room = Room(name=room_name)
-    db.session.add()
+    new_room = Room(name=room_name)
+    db.session.add(new_room)
     db.session.commit()
-    return jsonify({'room': room})
-
+    socketio.emit('new_room', {'room': new_room.to_dict()})
+    return jsonify({'room': new_room.to_dict()})
 
 @bp.route("/join-room/<int:id>")
 def join_room(room_id):
@@ -166,12 +147,6 @@ def index():
     return render_template('chat/index.html')
 
 
-@bp.route("/get-history", methods=['GET'])
-def get_history():
-    messages = Message.query.all()
-    messages = [msg.to_dict() for msg in messages]
-    return jsonify({'messages': messages})
-
 
 @bp.route("/get-history/<room_name>", methods=['GET'])
 def get_history_by_room_name(room_name=None):
@@ -179,7 +154,11 @@ def get_history_by_room_name(room_name=None):
     if not room:
         return flask.abort(404)
     flask.session['current_room'] = room.id
-    return jsonify(room.to_dict())
+    room_dict = room.to_dict()
+    room_dict['messages'] = [message.to_dict() for message in room.messages]
+    response = jsonify(room_dict)
+    response.headers['Cache-Control'] = 'public,max-age=300'
+    return response
 
 
 @bp.route("/get-online", methods=['GET'])
@@ -193,16 +172,21 @@ def get_users_online():
 def attach():
     if 'attach_file' not in request.files:
         return {}, 400
-    file = request.files['attach_file']
+    file = request.files.get('attach_file')
     if file.filename == '':
         return {}, 400
     filename = f'{secure_filename(file.filename)}_{datetime.datetime.utcnow().date()}_{str(datetime.datetime.utcnow().time()).replace(":", ".")}'
-    username = request.form['username']
-    text = request.form['text']
+    username = request.form.get('username')
+    text = request.form.get('text')
+    room_id = request.form.get('room_id')
+    if not room_id:
+        return flask.abort(400)
+    if not text:
+        text = ''
     link = os.path.join(os.path.join('app', current_app.config['UPLOAD_FOLDER']), filename)
     file.save(link)
     link = url_for('chat.get_content', name=filename)
-    message = Message(username=username, text=text, date=datetime.datetime.utcnow())
+    message = Message(username=username, text=text, date=datetime.datetime.utcnow(), room_id=room_id)
     attachment = Attachment(type=file.content_type, link=link)
     message.attachments.append(attachment)
     db.session.add(attachment)
@@ -214,7 +198,9 @@ def attach():
 
 @bp.route('/get-content/<path:name>', methods=['GET'])
 def get_content(name):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], name)
+    response = send_from_directory(current_app.config['UPLOAD_FOLDER'], name)
+    response.headers['Cache-Control'] = 'public,max-age=300'
+    return response
 
 
 @socketio.on("connect")

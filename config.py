@@ -12,10 +12,9 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'some-secret-key'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MUSIC_DIR = pathlib.Path('app/static/music')
-    CACHE_TYPE = 'RedisCache'  # Flask-Caching related configs
+    CACHE_TYPE = 'SimpleCache'  # Flask-Caching related configs
     CACHE_REDIS_HOST = 'localhost'
     CACHE_REDIS_PORT = 6379
     CACHE_DEFAULT_TIMEOUT = 300
     UPLOAD_FOLDER = 'content'
     MAX_CONTENT_LENGTH = 16 * 10 ** 6
-    SEND_FILE_MAX_AGE_DEFAULT = 300

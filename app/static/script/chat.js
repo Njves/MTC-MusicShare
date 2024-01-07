@@ -2,7 +2,6 @@ import {ChatView} from './chatView.js';
 
 // Now you can use the ChatView class
 const chatViewInstance = new ChatView();
-
 class User {
     username = null;
     constructor(username) {
@@ -96,12 +95,12 @@ class ChatController {
     _roomsModels = null;
     _currentRoom = null;
     _highLightedElement = null;
+    _sendCreateRoom = null;
     constructor() {
         this._socket = io({autoConnect: false});
         this._onlineListHtml = document.getElementById('users-list')
         this._onlineUsers = new Map()
         this.getCurrentUser().then(user => {
-
             this._currentUser = user['username']
             this._currentRoom = user['room']
             console.log(this._currentRoom)
@@ -128,10 +127,11 @@ class ChatController {
         this._loaderOnline = document.getElementById('loaderOnline')
         this._searchForm = document.getElementById('search-form')
         this._searchRun = document.getElementById('search-run')
+        this._sendCreateRoom = document.getElementById('send-create-room')
         this.subscribeOnEvent()
         this.enterKeyListener()
         this.clickListener()
-
+        this.createRoomListener()
         this.attachListener()
         this._inputFileAttach.addEventListener('change', () => {
             this.showPreview()
@@ -152,6 +152,7 @@ class ChatController {
         this._searchRun.addEventListener('click', event => {
 
         })
+
         console.log('scroll')
     }
 
@@ -174,6 +175,34 @@ class ChatController {
                 this._highLightedElement = key
                 console.log('highlight')
             }
+        })
+    }
+
+    createRoomListener() {
+        this._sendCreateRoom.addEventListener('click', () => {
+            this.createRoom()
+        })
+    }
+
+    async createRoom() {
+        let roomName = document.getElementById('roomNameInput').value
+        let roomPrivate = document.getElementById('roomPrivateCheck')
+        console.log(roomPrivate)
+        let json = JSON.stringify({'room_name': roomName, 'username': this._currentUser, 'room_private': roomPrivate})
+        fetch('/create-room', {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: 'POST',
+            body: json
+        }).then((response) => {
+            if(!response.ok)
+                alert('Неудалось создать комнату')
+            return response
+        }).then((data => {
+            console.log(data)
+        })).catch(error => {
+            throw new Error(`create room is invalid ${error}`)
         })
     }
 
@@ -206,20 +235,27 @@ class ChatController {
             console.log('clear')
         })
         this._sendAttach.addEventListener('click', () => {
-            let data = new FormData()
+            this.sendAttach()
+        })
+    }
+
+    sendAttach(event) {
+        event.preventDefault()
+        let data = new FormData()
             data.append('attach_file', this._inputFileAttach.files[0])
-            data.append('username', this._currentUser.username)
+            data.append('username', this._currentUser)
             data.append('text', document.getElementById('text-with-attach').value)
+            data.append('room_id', this._currentRoom.id)
             fetch('/attach', {
-                'method': 'POST',
+                method: 'POST',
                 body: data
             }).then(response => {
                 return response.json()
             }).then(data => {
                 console.log(data)
             })
-        })
     }
+
 
     subscribeOnEvent() {
         this._socket.on("connect", () => {
@@ -244,6 +280,9 @@ class ChatController {
                 }
             })
         })
+        this._socket.on('new_room', data => {
+            this.appendRoom(data['room'])
+        })
         this._socket.on('leave', data => {
             // Если пришло увдомление о выходи, удаляем из списка html и списка
             console.log('leaved')
@@ -262,7 +301,7 @@ class ChatController {
     }
 
     async onClickRoom(element) {
-        this._loader.style.display = 'block !important'
+        this.showLoader(this._loader)
         this._highLightedElement.style.backgroundColor = '#0a6ebd'
         this._highLightedElement.style.pointerEvents = 'auto'
         let room = this._roomsModels.get(element)
@@ -278,6 +317,7 @@ class ChatController {
             console.log('get-history')
             return response.json()
         }).then((data) => {
+            this.hideLoader(this._loader)
             while(this._chatWindow.firstChild) {
                 this._chatWindow.firstChild.remove()
             }
@@ -379,6 +419,7 @@ class ChatController {
     }
 
     appendRoom(room) {
+        console.log(room)
         let li = document.createElement("li");
         li.classList.add('room')
         li.appendChild(document.createTextNode(room["name"]))
@@ -426,7 +467,6 @@ class ChatController {
             })
             this.scrollToBottom(this._chatWindow)
         })
-        this._loader.style.display = 'none !important'
     }
 
     sendMessage() {

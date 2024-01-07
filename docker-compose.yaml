@@ -6,7 +6,7 @@ services:
     volumes:
       - chat:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_PASSWORD: admin
       POSTGRES_USER: admin
       POSTGRES_DB: chat
     ports:
@@ -19,9 +19,8 @@ services:
       - "6379:6379"
   backend:
     build: .
-    environment:
-      SECRET_KEY: "${SECRET_KEY}"
-      DB: postgresql://admin:${POSTGRES_PASSWORD}@database:5432/chat
+    env_file:
+      - .env
     ports:
       - 5000:5000
     depends_on:

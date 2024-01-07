@@ -13,26 +13,49 @@
 </head>
 <body>
 <main>
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="attachModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Отправить контент</h1>
+                    <h1 class="modal-title fs-5" id="attachModalLabel">Отправить контент</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" enctype="multipart/form-data" id="attach-form">
-                        <img src="#" class="attach-img-form m-2" style="display: none" alt="preview-img"  id="attach-preview"/><input id="attach-content-file" name="attach_file" type="file" accept="image/*"/>
-                        <label for="text-with-attach">
-                            Текст сообщения
-                            <input id="text-with-attach" type="text" name="text"/>
-                        </label>
-                    </form>
+                    <img src="#" class="attach-img-form m-2" style="display: none" alt="preview-img"  id="attach-preview"/><input id="attach-content-file" name="attach_file" type="file" accept="image/*"/>
+                    <label for="text-with-attach">
+                        Текст сообщения
+                        <input id="text-with-attach" type="text" name="text"/>
+                    </label>
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="cancel-attach" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     <button type="button" id="send-attach" class="btn btn-primary" data-bs-dismiss="modal">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Создать комнату</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="roomNameInput">Название комнаты</label>
+                        <input type="text" class="form-control" id="roomNameInput" placeholder="Введите название комнаты">
+                    </div>
+                    <div class="form-check mt-1">
+                        <input type="checkbox" class="form-check-input" id="roomPrivateCheck">
+                        <label class="form-check-label" for="roomPrivateCheck">Приватная</label>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-create-room" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" id="send-create-room" class="btn btn-primary" data-bs-dismiss="modal">Отправить</button>
                 </div>
             </div>
         </div>
@@ -57,15 +80,15 @@
                     <input id="search-form" type="text" class="form-control" placeholder="Поиск" aria-label="Поиск" aria-describedby="basic-addon1">
                     <button type="button" class="btn btn-secondary" id="search-run">Искать</button>
                 </div>
-                <ul id="chat-messages">
-                </ul>
                 <div class="d-flex justify-content-center m-2" id="loader">
                     <div class="spinner-border" role="status">
                     </div>
                 </div>
+                <ul id="chat-messages">
+                </ul>
                 <div class="control-panel">
                     <div class="input-group mb-3">
-                        <button class="btn attach" id="attach"  data-bs-toggle="modal" data-bs-target="#exampleModal"><img class="attach-img" src="{{ url_for('static', filename='icon/paperclip.svg') }}"/></button>
+                        <button class="btn attach" id="attach"  data-bs-toggle="modal" data-bs-target="#attachModal"><img class="attach-img" src="{{ url_for('static', filename='icon/paperclip.svg') }}"/></button>
                         <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
                         <button class="btn send-msg" id="send_msg"><img class="send-img" src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
                         <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
@@ -78,9 +101,11 @@
                     <div class="spinner-border" role="status">
                     </div>
                 </div>
-                <ul id="rooms-list">
-                </ul>
-                <button class="btn btn-secondary mt-1">Создать комнату</button>
+                <div class="container-md">
+                    <ul id="rooms-list">
+                    </ul>
+                    <button class="btn btn-secondary mt-1" data-bs-toggle="modal" data-bs-target="#createRoomModal">Создать комнату</button>
+                </div>
             </div>
         </div>
     </div>

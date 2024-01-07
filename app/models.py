@@ -21,6 +21,7 @@ class Message(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'),
                         nullable=True)
     attachments = db.relationship('Attachment', backref='message', lazy=True)
+
     def to_dict(self):
         return {'username': self.username, 'text': self.text, 'date': str(self.date),
                 'attachments': [attachment.to_dict() for attachment in self.attachments], 'room_id': self.room_id}
@@ -32,5 +33,6 @@ class Room(db.Model):
     messages = db.relationship('Message', backref='room', lazy=True)
     def __repr__(self):
         return self.name
+
     def to_dict(self):
-        return {'id': self.id, 'name': self.name, 'messages': [message.to_dict() for message in self.messages]}
+        return {'id': self.id, 'name': self.name}
