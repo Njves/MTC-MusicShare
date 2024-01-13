@@ -1,55 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='script/coloris.css') }}"/>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icon/favicon.png') }}">
-  <title>Предбанник</title>
-  <style>
-    body {
-      background-color: #f8f9fa;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='script/coloris.css') }}"/>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icon/favicon.png') }}">
+    <title>Предбанник</title>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
 
-    .login-container {
-      max-width: 400px;
-      margin: auto;
-      margin-top: 100px;
-      background-color: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-  </style>
+        .container {
+            max-width: 400px;
+            margin: auto;
+            margin-top: 100px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="login-container">
-    <h2 class="text-center mb-4">Предбанник</h2>
-    <form id="form_enter" action="{{ url_for('chat.index') }}" onsubmit="submitForm(event)" method="POST">
-      <div class="mb-3">
-        <label for="username" class="form-label">Имя</label>
-        <input type="text" class="form-control" id="username" name="username" placeholder="Введите ваше имя" required>
+<div class="container login-container">
+    <h2 class="text-center mb-2">Войти</h2>
+    <form method="POST" class="login-form" onsubmit="onLoginSubmit(event)">
         <div id='alert' class="alert alert-danger m-2" style="display: none" role="alert">
-          Введите нормальное имя
+            Введите нормальное имя
         </div>
-      </div>
-      <div class="mb-3">
-        <label for="color" class="form-label">Выберите цвет имени</label>
-        <input type="text" class="form-control" id="color" name="color" disabled data-coloris>
-      </div>
-      <div class="text-center">
-        <button type="submit" class="btn btn-primary">Войти</button>
-      </div>
+        <div class="mb-1">
+            <label for="username" class="form-label">Логин</label>
+            <input type="text" class="form-control" id="username" name="username" placeholder="Введите ваше имя" required>
+        </div>
+        <div class="mb-1">
+            <label for="password" class="form-label">Пароль</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Введите ваш пароль" required>
+        </div>
+        <div class="mb-3">
+            <label for="color" class="form-label">Выберите цвет имени</label>
+            <input type="text" class="form-control" id="color" name="color" data-coloris>
+        </div>
 
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary login-btn">Войти</button>
+        </div>
     </form>
-  </div>
+    <div class="text-center mt-1 mb-1">
+        <button class="btn btn-outline-primary to-register">Зарегистрироваться</button>
+    </div>
 </div>
-<script>
 
-</script>
+<div class="container register-container" style="display: none">
+    <form method="POST" class="register-form" onsubmit="onRegisterSubmit(event)">
+        <h2 class="text-center mb-2">Зарегистрироваться</h2>
+        <div id='reg_alert' class="alert alert-danger m-2" style="display: none" role="alert">
+        </div>
+        <div class="mb-1">
+            <label for="username" class="form-label">Логин</label>
+            <input type="text" class="form-control" id="reg_username" name="username" placeholder="Введите ваше имя" required>
+        </div>
+        <div class="mb-1">
+            <label for="password" class="form-label">Пароль</label>
+            <input type="password" class="form-control" id="reg_password" name="password" placeholder="Введите ваш пароль" required>
+        </div>
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary" class="register-btn">Зарегистрироваться</button>
+        </div>
+    </form>
+    <div class="text-center mt-1 mb-1">
+        <button type="submit" class="btn btn-outline-primary to-login">Войти</button>
+    </div>
+</div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='script/prepare.js') }}"></script>
 <script src="{{ url_for('static', filename='script/coloris.js') }}"></script>

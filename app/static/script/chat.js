@@ -1,6 +1,15 @@
 import {ChatView} from './chatView.js';
+import {OnlineChatController} from "./onlineChat.js";
+const toastTrigger = document.getElementById('liveToastBtn')
+const toastLiveExample = document.getElementById('liveToast')
+if (toastTrigger) {
+    toastTrigger.addEventListener('click', () => {
+        const toast = new bootstrap.Toast(toastLiveExample)
 
-// Now you can use the ChatView class
+        toast.show()
+    })
+}
+
 const chatViewInstance = new ChatView();
 class User {
     username = null;
@@ -31,12 +40,12 @@ class Message {
     }
 
     toJson() {
-        return JSON.stringify({"username": this._senderUsername, 'text': this._text, 'date': this._date, 'room_id': this._roomId})
+        return JSON.stringify({"user": this._senderUsername, 'text': this._text, 'date': this._date, 'room_id': this._roomId})
     }
 
     fromJson(string) {
         let jsonObject = JSON.parse(string)
-        return new Message(jsonObject['username'], jsonObject['text'], jsonObject['date'], jsonObject['room_id'])
+        return new Message(jsonObject['user'], jsonObject['text'], jsonObject['date'], jsonObject['room_id'])
     }
 }
 
@@ -77,8 +86,7 @@ class Room {
 
 class ChatController {
     _socket = null;
-    _onlineListHtml = null;
-    _onlineUsers = null;
+    #onlineChatController = new OnlineChatController();
     _currentUser = null;
     notificationSound = new Audio("/get-notify-message")
     _chatWindow = null;
@@ -89,54 +97,58 @@ class ChatController {
     _attachForm = null;
     _loader = null;
     _loaderRooms = null;
-    _loaderOnline = null;
     _searchForm = null;
     _searchRun = null;
     _roomsModels = null;
     _currentRoom = null;
     _highLightedElement = null;
     _sendCreateRoom = null;
+    _initRoom = null;
     constructor() {
         this._socket = io({autoConnect: false});
-        this._onlineListHtml = document.getElementById('users-list')
-        this._onlineUsers = new Map()
+
         this.getCurrentUser().then(user => {
-            this._currentUser = user['username']
-            this._currentRoom = user['room']
-            console.log(this._currentRoom)
-            console.log(this._currentUser)
-            this.getOnlineUsers(user['username'])
-            this.getHistory()
+            this._currentUser = user
             this.getRooms().then(rooms => {
                 this.highLightCurrentRoom(this._currentRoom)
+                if(Cookies.get('current_room')) {
+                    this._initRoom = Cookies.get('current_room')
+                    this._roomsModels.forEach((value, key, map) => {
+                        if(value['id'] === parseInt(this._initRoom)) {
+                            this.onClickRoom(key)
+                        }
+                    })
+                }
             })
-
         })
+
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
         this._socket.connect()
         this._roomsModels = new Map()
         this._roomList = document.getElementById('rooms-list')
         this._inputFileAttach = document.getElementById('attach-content-file')
-        this._attachPreview = document.getElementById('attach-preview')
         this._sendAttach = document.getElementById('send-attach')
         this._cancelAttach = document.getElementById('cancel-attach')
         this._attachForm = document.getElementById('attach-form')
         this._loader = document.getElementById('loader')
         this._loaderRooms = document.getElementById('loaderRooms')
-        this._loaderOnline = document.getElementById('loaderOnline')
         this._searchForm = document.getElementById('search-form')
         this._searchRun = document.getElementById('search-run')
         this._sendCreateRoom = document.getElementById('send-create-room')
+        this.#onlineChatController.getOnlineUsers()
+        $('.control-panel').css('pointer-events', 'none')
         this.subscribeOnEvent()
         this.enterKeyListener()
         this.clickListener()
         this.createRoomListener()
         this.attachListener()
-        this._inputFileAttach.addEventListener('change', () => {
-            this.showPreview()
-            console.log('show')
+        $('attach-preview').change(function() {
+            let file = $('attach-content-file').prop('files')[0]
+            this.attr('src', URL.createObjectURL(file))
+            this.show()
         })
+        this.hideLoader(this._loader)
         this._chatWindow.addEventListener('scroll', (event) => {
             if(this._chatWindow.scrollHeight - this._chatWindow.scrollTop)
                 if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
@@ -145,35 +157,41 @@ class ChatController {
                 }
             this._buttonScroll.style.display = 'none'
         })
-
         this._buttonScroll.addEventListener('click', event => {
             this.scrollToBottom(this._chatWindow)
         })
         this._searchRun.addEventListener('click', event => {
 
         })
+        $('#roomPrivateCheck').change(function() {
+            // Check if the checkbox is checked
+            if ($(this).is(':checked')) {
+                // If checked, add an input element to the container
+                $('.modal-body').append(`<div class="form-group room-password-container">
+                        <label for="roomPasswordInput">Пароль от комнаты</label>
+                        <input type="text" class="form-control" id="roomPasswordInput" placeholder="Пароль от комнаты">
+                    </div>`);
+            } else {
+                // If unchecked, remove the input element
+                $('.room-password-container').remove();
+            }
+        });
 
-        console.log('scroll')
-    }
-
-    showPreview() {
-        let file = this._inputFileAttach.files[0]
-        this._attachPreview.src = URL.createObjectURL(file)
-        this._attachPreview.style.display = 'block'
     }
 
     roomIsEquals(room, anotherRoom) {
         return Object.entries(room).toString() === Object.entries(anotherRoom).toString()
     }
 
-    async highLightCurrentRoom(currentRoom) {
+    async highLightCurrentRoom() {
+        if(!this._currentRoom)
+            return;
         this._roomsModels.forEach((value, key, map) => {
             // Какая то проверка
             if(this.roomIsEquals(this._currentRoom, value)) {
                 key.style.backgroundColor = '#032f4f'
                 key.style.pointerEvents = 'none'
                 this._highLightedElement = key
-                console.log('highlight')
             }
         })
     }
@@ -187,7 +205,6 @@ class ChatController {
     async createRoom() {
         let roomName = document.getElementById('roomNameInput').value
         let roomPrivate = document.getElementById('roomPrivateCheck')
-        console.log(roomPrivate)
         let json = JSON.stringify({'room_name': roomName, 'username': this._currentUser, 'room_private': roomPrivate})
         fetch('/create-room', {
             headers: {
@@ -200,7 +217,7 @@ class ChatController {
                 alert('Неудалось создать комнату')
             return response
         }).then((data => {
-            console.log(data)
+
         })).catch(error => {
             throw new Error(`create room is invalid ${error}`)
         })
@@ -228,11 +245,9 @@ class ChatController {
     attachListener() {
         this._sendAttach.addEventListener('click', () => {
             this.clearPreview()
-            console.log('clear')
         })
         this._cancelAttach.addEventListener('click', () => {
             this.clearPreview()
-            console.log('clear')
         })
         this._sendAttach.addEventListener('click', () => {
             this.sendAttach()
@@ -240,20 +255,19 @@ class ChatController {
     }
 
     sendAttach(event) {
-        event.preventDefault()
         let data = new FormData()
-            data.append('attach_file', this._inputFileAttach.files[0])
-            data.append('username', this._currentUser)
-            data.append('text', document.getElementById('text-with-attach').value)
-            data.append('room_id', this._currentRoom.id)
-            fetch('/attach', {
-                method: 'POST',
-                body: data
-            }).then(response => {
-                return response.json()
-            }).then(data => {
-                console.log(data)
-            })
+        data.append('attach_file', this._inputFileAttach.files[0])
+        data.append('username', this._currentUser)
+        data.append('text', document.getElementById('text-with-attach').value)
+        data.append('room_id', this._currentRoom.id)
+        fetch('/img-attach', {
+            method: 'POST',
+            body: data
+        }).then(response => {
+            return response.json()
+        }).then(data => {
+
+        })
     }
 
 
@@ -273,8 +287,15 @@ class ChatController {
             if(this._currentRoom['id'] === data['room_id']) {
                 this.appendMessage(data)
             }
+
+        })
+        this._socket.on('on_delete', data => {
+
+        })
+        this._socket.on('notify', data => {
+            if(!this._currentRoom)
+                return
             this._roomsModels.forEach((value, key, map) => {
-                console.log(this._currentRoom, data['room_id'])
                 if(value['id'] === data['room_id'] && this._currentRoom['id'] !== data['room_id']) {
                     key.innerHTML = `${key.innerHTML}+`
                 }
@@ -285,36 +306,39 @@ class ChatController {
         })
         this._socket.on('leave', data => {
             // Если пришло увдомление о выходи, удаляем из списка html и списка
-            console.log('leaved')
-            this.removeUserFromOnline(data['username'])
+            this.#onlineChatController.removeUserFromOnline(data)
         })
         this._socket.on('join', data => {
-            this.addUserToOnlineList(data['username'], data['room'])
+            this.#onlineChatController.addUser(data)
         })
-    }
-
-    async removeUserFromOnline(username_leaved) {
-        if(!this._onlineUsers.get(username_leaved))
-            return
-        this._onlineListHtml.removeChild(this._onlineUsers.get(username_leaved))
-        this._onlineUsers.delete(username_leaved)
     }
 
     async onClickRoom(element) {
         this.showLoader(this._loader)
-        this._highLightedElement.style.backgroundColor = '#0a6ebd'
-        this._highLightedElement.style.pointerEvents = 'auto'
+        $('.control-panel').css('pointer-events', 'auto')
         let room = this._roomsModels.get(element)
+        if(!this._currentRoom) {
+            this._socket.emit('join', {'room_id': room.id})
+        } else {
+            this._socket.emit('leave', {'room_id': this._currentRoom.id})
+            this._socket.emit('join', {'room_id': room.id})
+        }
+
         this._currentRoom = room
-        await this.highLightCurrentRoom(this._currentRoom)
+        if(!this._highLightedElement)
+            this._highLightedElement = element
+        if(this._highLightedElement) {
+            this._highLightedElement.style.backgroundColor = '#0a6ebd'
+            this._highLightedElement.style.pointerEvents = 'auto'
+            await this.highLightCurrentRoom(this._currentRoom)
+        }
         await this.getRoomHistory(room)
     }
 
     async getRoomHistory(room) {
-        fetch(`/get-history/${room['name']}`).then((response) => {
+        fetch(`/get-room/${room['id']}`).then((response) => {
             if(!response.ok)
                 alert('Неудалось получить сообщение из комнаты')
-            console.log('get-history')
             return response.json()
         }).then((data) => {
             this.hideLoader(this._loader)
@@ -330,7 +354,6 @@ class ChatController {
 
     }
 
-
     convertDate(date) {
         let serverDate = new Date(date);
         let timezoneOffset = serverDate.getTimezoneOffset();
@@ -345,19 +368,49 @@ class ChatController {
         });
     }
 
+    async editMessage(element, message) {
+        message['text'] = 'хуй' + element.toString()
+        return fetch(`message/${message.id}`, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            method: 'PUT',
+            body: JSON.stringify(message)
+        }).then((response) => {
+            if(!response.ok)
+                alert('Неудалось изменить сообщение')
+            return response.json()
+        }).then(data => {
+            this.editElement(element, data)
+        })
+    }
+    async editElement(element, data){
+        let convertedDate = this.convertDate(data['date'])
+
+    }
+
     async appendMessage(data) {
-        if(!data['text'])
+        if(!data['text'] && !data['attachments'])
             return
         let li = document.createElement("li");
-        let username_element = document.createElement('strong',)
-        username_element.appendChild(document.createTextNode(data["username"]))
-        if(!data['date'])
-            data['date'] = new Date().toDateString()
-        li.appendChild(username_element)
-        li.appendChild(document.createTextNode(` ${this.convertDate(data['date'])}`))
-        li.appendChild(document.createElement('br'));
-        li.appendChild(document.createTextNode(data["text"]))
-        li.appendChild(document.createElement('br'));
+        let convertedDate = this.convertDate(data['date'])
+        let username_el = $(`<strong>${data['user']['username']}</strong>`).css('color', data['user']['color']).appendTo(li)
+        $(`<span> ${convertedDate}</span>`).appendTo(li)
+        if(this._currentUser['username'] === data['user']['username']) {
+            $("<button class='btn btn-outline-danger m-1 p-1'>Удалить</button>")
+                .on('click', () => {
+                    console.log(data);
+                    this.deleteMessage(li, data);
+                })
+                .appendTo(li);
+            $("<button class='btn btn-outline-primary m-1 p-1'>Редактировать</button>")
+                .on('click', () => {
+                    // this.editMessage(li, data)
+                    $(`#${data['id']}`).hide
+                })
+                .appendTo(li);
+        }
+        $(`<br/><span id=${data['id']}>${data['text']}</span>`).addClass('message-text').appendTo(li)
         if(data['attachments']) {
             data['attachments'].forEach(attachment => {
                 let attachmentImg = document.createElement('img')
@@ -365,6 +418,7 @@ class ChatController {
                 attachmentImg.loading = 'lazy'
                 attachmentImg.style.maxWidth = '540px'
                 attachmentImg.style.minWidth = '340px'
+                li.appendChild(document.createElement('br'));
                 li.appendChild(attachmentImg)
             })
         }
@@ -372,38 +426,8 @@ class ChatController {
         this.scrollToBottom(this._chatWindow)
     }
 
-    getOnlineUsers() {
-        this.showLoader(this._loaderOnline)
-        fetch('get-online').then(response => {
-            if(!response.ok)
-                throw new Error('Server is response faield')
-            return response.json()
-        }).then(data => {
-            data.forEach(user => {
-                this.hideLoader(this._loaderOnline)
-                if(this.isCurrentUser(user))
-                    return;
-                this.addUserToOnlineList(user)
-            })
-        }).catch(error => {
-            throw new Error(`User is invalid ${error}`)
-        })
-    }
-
     isCurrentUser(username) {
         return this._currentUser === username
-    }
-
-    addUserToOnlineList(username, room) {
-        let li = document.createElement("li");
-        li.id = username
-        if(username === this._currentUser) {
-            li.appendChild(document.createTextNode('(Вы) ' + username))
-        }
-        else
-            li.appendChild(document.createTextNode(username));
-        this._onlineListHtml.appendChild(li);
-        this._onlineUsers.set(username, li);
     }
 
     async getCurrentUser() {
@@ -419,11 +443,11 @@ class ChatController {
     }
 
     appendRoom(room) {
-        console.log(room)
-        let li = document.createElement("li");
+
+        let li = document.createElement("li")
         li.classList.add('room')
-        li.appendChild(document.createTextNode(room["name"]))
-        this._roomList.appendChild(li);
+        li.append(document.createTextNode(`${room['name']}`))
+        this._roomList.appendChild(li)
         li.addEventListener('click', (event) => {
             this.onClickRoom(event.target)
         })
@@ -453,24 +477,33 @@ class ChatController {
     hideLoader(loader) {
         loader.classList.add('d-none')
     }
-    async getHistory() {
-        this.showLoader(this._loader)
-        fetch(`get-history/${this._currentRoom['name']}`).then(response => {
-            if(!response.ok)
-                alert('Неудалось получить историю сообщений')
-            return response.json()
+
+    async deleteMessage(element, message) {
+        return fetch(`message/${message['id']}`, {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: 'DELETE',
+            body: JSON.stringify({'username': this._currentUser})
+        }).then(response => {
+            if(!response.ok) {
+                alert('Неудалось удалить сообщение')
+                return
+            }
+            return response
         }).then(data => {
-            this.hideLoader(this._loader)
-            this._currentRoom = data
-            data.messages.forEach(msg => {
-                this.appendMessage(msg)
-            })
-            this.scrollToBottom(this._chatWindow)
+            if(data.ok) {
+                $(element).hide(500, () => $(element).remove())
+                this._socket.emit('delete', message)
+            }
         })
     }
 
     sendMessage() {
         let text = document.getElementById("message").value;
+        console.log(text.trim().length)
+        if(text.trim().length <= 0)
+            return;
         let message = new Message(this._currentUser, text, Math.floor(new Date().getTime() / 1000), this._currentRoom.id)
         this._socket.emit("new_message", message.toJson());
         document.getElementById("message").value = "";
