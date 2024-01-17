@@ -1,12 +1,4 @@
-$('.to-register').on('click', () => {
-    $('.register-container').show()
-    $('.login-container').hide()
-})
 
-$('.to-login').on('click', () => {
-    $('.register-container').hide()
-    $('.login-container').show()
-})
 function onLoginSubmit() {
     event.preventDefault()
     let login_obj = {'username': $('#username').val(),
@@ -29,8 +21,6 @@ function onLoginSubmit() {
     }).then(response => {
         $('.login-btn').css("pointer-events","auto");
         window.location.href = response.url
-
-
     }).catch(e => {
         $('.login-btn').css("pointer-events","auto");
         e.then(data => {
@@ -55,18 +45,13 @@ function onRegisterSubmit() {
         body: regJson
     }).then(response => {
         if(!response.ok) throw response.json()
-        return response
-    }).then(response => {
+        window.location.href = response.url
         $('.register-btn').css("pointer-events","auto");
-        let access_token = response.json()['access_token']
-        sessionStorage.setItem('access-token', access_token)
-        console.log(response.url)
-        // window.location.href = response.url + '?access_token=' + access_token
-
+        return response
     }).catch(e => {
         $('.register-btn').css("pointer-events","auto");
         e.then(data => {
-            $('#alert').text(data.error).show()
+            $('#reg_alert').text(data.error).show()
         })
     })
 }

@@ -1,12 +1,12 @@
+from http import HTTPStatus
+
 import flask
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, abort
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.urls import iri_to_uri
 
 from app import db, login_manager
 from app.auth import bp
 from app.models import User
-
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -48,20 +48,27 @@ def register():
             response = flask.make_response({'error': 'Такой пользователь уже существует'}, 409)
             return response
         user = User(username=reg_login)
-        user.set_password(reg_password)
-        login_user(user, remember=True)
+        if not user.set_password(reg_password):
+            response = flask.make_response({'error': 'Слишком короткий пароль'}, 409)
+            return response
         db.session.add(user)
         db.session.commit()
-        next = flask.request.args.get('next') if flask.request.args.get('next') else url_for('chat.index')
-        response = flask.make_response({'access_token': user.get_user_token()}, 303)
-        location = iri_to_uri(next, safe_conversion=True)
-        response.headers['Location'] = location
-        return response
-    return render_template('chat/enter.html')
+        login_user(user, remember=True)
+        next = flask.request.args.get('next')
+        return redirect(next or url_for('chat.index'))
+    return render_template('chat/register.html')
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    if request.blueprint == 'chat':
+        abort(HTTPStatus.UNAUTHORIZED)
+    return redirect(login_manager.login_view)
 
 
 @bp.route("/logout", methods=['GET'])
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('auth.login'))
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('current_room')
+    return response

@@ -22,6 +22,7 @@ class User(db.Model, UserMixin):
     color = db.Column(db.String(10), default='#000000')
     last_seen = db.Column(db.DateTime, default=datetime.utcnow, comment='last seen user in online')
     room_owner = db.relationship('Room', backref='owner', lazy=True)
+
     def __repr__(self) -> str:
         return f'(User {self.id}, Username: {self.username}, email: {self.email}, last_seen: {self.last_seen})'
 
@@ -30,7 +31,10 @@ class User(db.Model, UserMixin):
                 'last_seen': str(self.last_seen)}
 
     def set_password(self, password):
+        if len(password) < 6:
+            return False
         self.password_hash = generate_password_hash(password)
+        return True
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -54,7 +58,7 @@ class User(db.Model, UserMixin):
     def verify_token(token):
         try:
             account = User.query.get(jwt.decode(token, current_app.config['SECRET_KEY'],
-                                                   algorithms=['HS256'])['user_id'])
+                                                algorithms=['HS256'])['user_id'])
             return account
         except jwt.ExpiredSignatureError:
             return None  # Токен истек
@@ -71,7 +75,6 @@ class Attachment(db.Model):
     def to_dict(self):
         return {'type': self.type, 'link': self.link}
 
-
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(), nullable=True, index=True)
@@ -84,10 +87,12 @@ class Message(db.Model):
     user = db.relationship('User', backref='messages', lazy=True, foreign_keys=[user_id])
     receiver = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
+    received_messages = db.relationship('User', backref='received_messages', lazy=True, foreign_keys=[receiver])
     def is_private(self):
         return self.receiver is not None
+
     def to_dict(self):
-        return {'id': self.id, 'user': self.user.to_dict(), 'text': self.text, 'date': str(self.date),
+        return {'id': self.id, 'user': self.user.to_dict(), 'text': self.text, 'receiver': self.receiver, 'date': str(self.date),
                 'attachments': [attachment.to_dict() for attachment in self.attachments], 'room_id': self.room_id}
 
 
@@ -96,7 +101,8 @@ class Room(db.Model):
     name = db.Column(db.String(64), nullable=False, unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
-    messages = db.relationship('Message', backref='room', lazy=True, order_by="Message.date")
+    messages = db.relationship('Message', backref='room', lazy=True, order_by="Message.date.desc()")
+
     def __repr__(self):
         return self.name
 

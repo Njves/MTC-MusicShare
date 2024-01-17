@@ -1,5 +1,3 @@
-import shutil
-import os
 import flask_socketio
 from flask import Flask
 from flask_admin import Admin
@@ -22,7 +20,7 @@ convention = {
 migrate = Migrate()
 admin_app = Admin(name='MusicShare', template_mode='bootstrap3')
 db = SQLAlchemy(metadata=MetaData(naming_convention=convention))
-socketio = flask_socketio.SocketIO()
+socketio = flask_socketio.SocketIO(manage_session=False)
 login_manager = LoginManager()
 cache = Cache()
 
@@ -37,7 +35,8 @@ def create_app(config_class=Config):
     cache.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
-    register_commands(app)
+    with app.app_context():
+        from . import cli
     from app.chat import bp as chat_bp
     app.register_blueprint(chat_bp)
     from app.auth import bp as auth_bp
@@ -45,13 +44,4 @@ def create_app(config_class=Config):
     return app
 
 
-def register_commands(app):
-    @app.cli.command('clear-content')
-    def clear():
-        """ Удаляет все картинки """
-        if os.path.exists(f'./app/{app.config["UPLOAD_FOLDER"]}'):
-            shutil.rmtree(f'./app/{app.config["UPLOAD_FOLDER"]}')
-            os.mkdir('./app/content/')
 
-
-from app import models, admin, cache

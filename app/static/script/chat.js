@@ -104,8 +104,11 @@ class ChatController {
     _highLightedElement = null;
     _sendCreateRoom = null;
     _initRoom = null;
+    _messagePart = 1
     constructor() {
-        this._socket = io({autoConnect: false});
+        this._socket = io({autoConnect: false, query: {
+            'user_id': 8
+            }});
 
         this.getCurrentUser().then(user => {
             this._currentUser = user
@@ -176,7 +179,6 @@ class ChatController {
                 $('.room-password-container').remove();
             }
         });
-
     }
 
     roomIsEquals(room, anotherRoom) {
@@ -260,7 +262,7 @@ class ChatController {
         data.append('username', this._currentUser)
         data.append('text', document.getElementById('text-with-attach').value)
         data.append('room_id', this._currentRoom.id)
-        fetch('/img-attach', {
+        fetch('/attach', {
             method: 'POST',
             body: data
         }).then(response => {
@@ -315,6 +317,7 @@ class ChatController {
 
     async onClickRoom(element) {
         this.showLoader(this._loader)
+        $('#message-list-empty').hide()
         $('.control-panel').css('pointer-events', 'auto')
         let room = this._roomsModels.get(element)
         if(!this._currentRoom) {
@@ -336,7 +339,7 @@ class ChatController {
     }
 
     async getRoomHistory(room) {
-        fetch(`/get-room/${room['id']}`).then((response) => {
+        fetch(`/get-room/${room['id']}/${this._messagePart}`).then((response) => {
             if(!response.ok)
                 alert('Неудалось получить сообщение из комнаты')
             return response.json()
