@@ -31,10 +31,7 @@ class User(db.Model, UserMixin):
                 'last_seen': str(self.last_seen)}
 
     def set_password(self, password):
-        if len(password) < 6:
-            return False
         self.password_hash = generate_password_hash(password)
-        return True
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -53,7 +50,7 @@ class User(db.Model, UserMixin):
         return jwt.encode(
             {'user_id': self.id},
             current_app.config['SECRET_KEY'], algorithm='HS256')
-
+    
     @staticmethod
     def verify_token(token):
         try:
@@ -107,4 +104,18 @@ class Room(db.Model):
         return self.name
 
     def to_dict(self):
-        return {'id': self.id, 'name': self.name}
+        return {'id': self.id, 'name': self.name, 'owner_id': self.owner_id}
+
+    @staticmethod
+    def is_exists(room_id):
+        return Room.query.get(room_id)
+
+    @staticmethod
+    def from_dict(room_dict):
+        room = Room()
+        messages = room_dict.get('messages') if room_dict.get('messages') else []
+        room.id = room_dict.get('id')
+        room.name = room_dict.get('name')
+        room.owner_id = room_dict.get('owner_id')
+        room.messages = messages
+        return room

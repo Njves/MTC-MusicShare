@@ -2,13 +2,18 @@ import {ChatView} from './chatView.js';
 import {OnlineChatController} from "./onlineChat.js";
 const toastTrigger = document.getElementById('liveToastBtn')
 const toastLiveExample = document.getElementById('liveToast')
-if (toastTrigger) {
-    toastTrigger.addEventListener('click', () => {
-        const toast = new bootstrap.Toast(toastLiveExample)
+const toastText = document.getElementById('toastBody')
+function showToast(toastText) {
+    if (toastTrigger) {
+        toastTrigger.addEventListener('click', () => {
+            toastText.innerHTML = toastText
+            const toast = new bootstrap.Toast(toastLiveExample)
 
-        toast.show()
-    })
+            toast.show()
+        })
+    }
 }
+
 
 const chatViewInstance = new ChatView();
 class User {
@@ -107,7 +112,7 @@ class ChatController {
     _messagePart = 1
     constructor() {
         this._socket = io({autoConnect: false, query: {
-            'user_id': 8
+                'user_id': 8
             }});
 
         this.getCurrentUser().then(user => {

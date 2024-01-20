@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import flask
-from flask import render_template, request, redirect, url_for, abort
+from flask import render_template, request, redirect, url_for, abort, Response
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app import db, login_manager
@@ -10,7 +10,7 @@ from app.models import User
 
 
 @bp.route('/login', methods=['GET', 'POST'])
-def login():
+def login() -> str | Response:
     """
     Auth page
     """
@@ -27,15 +27,15 @@ def login():
                 db.session.add(user)
                 db.session.commit()
             login_user(user, remember=True)
-            next = flask.request.args.get('next')
-            return redirect(next or url_for('chat.index'))
+            next_arg = flask.request.args.get('next')
+            return redirect(next_arg or url_for('site.index'))
         response = flask.make_response({'error': 'Пароль неверный'}, 401)
         return response
     return render_template('chat/enter.html')
 
 
 @bp.route("/register", methods=['GET', 'POST'])
-def register():
+def register() -> str | Response:
     if current_user.is_authenticated:
         return flask.make_response({'message': 'Вы уже вошли в систему'}, 403)
     if request.method == 'POST':
@@ -54,12 +54,13 @@ def register():
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
-        next = flask.request.args.get('next')
-        return redirect(next or url_for('chat.index'))
+        next_arg = flask.request.args.get('next')
+        return redirect(next_arg or url_for('site.index'))
     return render_template('chat/register.html')
 
+
 @login_manager.unauthorized_handler
-def unauthorized():
+def unauthorized() -> Response:
     if request.blueprint == 'chat':
         abort(HTTPStatus.UNAUTHORIZED)
     return redirect(login_manager.login_view)
@@ -67,7 +68,7 @@ def unauthorized():
 
 @bp.route("/logout", methods=['GET'])
 @login_required
-def logout():
+def logout() -> Response:
     logout_user()
     response = redirect(url_for('auth.login'))
     response.delete_cookie('current_room')

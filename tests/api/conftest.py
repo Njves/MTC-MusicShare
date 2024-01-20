@@ -9,11 +9,6 @@ from app import create_app
 from tests.config import TestConfig
 
 
-@pytest.fixture(scope="function", autouse=True)
-def autouse_db_session(db_session):
-    pass
-
-
 @pytest.fixture(scope="session")
 def app():
     """Set up global front-end app for functional tests
@@ -22,10 +17,9 @@ def app():
     """
     app = create_app(TestConfig)
     app.app_context().push()
-    app.test_client_class = ApiClient
+    app.test_client_class = FlaskLoginClient
     app.response_class = ApiResponse
-    return app
-
+    yield app
 
 class ApiClient(FlaskLoginClient):
     def open(self, *args, **kwargs):
@@ -37,11 +31,18 @@ class ApiClient(FlaskLoginClient):
         if json_data is not None:
             kwargs["data"] = json.dumps(json_data)
             kwargs["content_type"] = "application/json"
-
-        return super(ApiClient, self).open(*args, **kwargs)
+        return super(FlaskLoginClient, self).open(*args, **kwargs)
 
 
 class ApiResponse(Response):
     @property
     def json(self):
         return json.loads(self.data)
+
+@pytest.fixture(scope="session")
+def client(app):
+    """Set up global front-end app for functional tests
+
+    Initialized once per test-run
+    """
+    yield app.test_client()
