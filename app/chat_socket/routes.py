@@ -3,12 +3,11 @@ import json
 from datetime import datetime
 from typing import Callable
 
-from flask import request, current_app
+from flask import request
 from flask_login import login_user, current_user
 from flask_socketio import disconnect, emit, leave_room, join_room
 
 from app import socketio, db
-from app.chat.routes import update_last_seen
 from app.models import User, Message, Room
 
 users: dict[User, int] = {}
@@ -57,8 +56,7 @@ def on_join(data: dict | str):
         socketio.emit('exception', {'error': 'The room ID is missing'})
     if not Room.is_exists(room_id):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
-    print(current_user.username, 'join to', data['id'], 'room')
-    join_room(data['id'])
+    join_room(room_id)
 
 
 @socketio.on("leave")
@@ -72,7 +70,7 @@ def on_join(data: dict | str):
     if not Room.is_exists(room_id):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
     print(current_user.username, 'leaved to', data['id'], 'room')
-    leave_room(data['id'])
+    leave_room(room_id)
 
 
 @socketio.on("delete")
@@ -98,14 +96,14 @@ def handle_user_leave():
     """
     leaved_user: User = None
     for user in users:
-        if request.sid == users[user]:
+        if request.sid == users.get(user):
             leaved_user = user
             break
     if leaved_user:
-        print('leaved_user', leaved_user.to_dict())
-        socketio.start_background_task(update_last_seen, (current_app._get_current_object(), leaved_user.id,))
-        emit('leave', leaved_user.to_dict(), broadcast=True)
         del users[leaved_user]
+        leaved_user.last_seen = datetime.utcnow()
+        db.session.commit()
+        emit('leave', leaved_user.to_dict(), broadcast=True)
 
 
 @socketio.on("new_message")

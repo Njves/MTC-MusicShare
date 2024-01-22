@@ -9,21 +9,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='style/chat.css') }}" rel="stylesheet" />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icon/favicon.png') }}">
-
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 </head>
 <body>
 <main>
-
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
-                <img src="..." class="rounded me-2" alt="...">
-                <strong class="me-auto">Bootstrap</strong>
-                <small>11 mins ago</small>
+                <strong class="me-auto">Сообщение</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <div class="toast-body">
-                Hello, world! This is a toast message.
+            <div class="toast-body" id="toastBody">
             </div>
         </div>
     </div>
@@ -35,13 +31,16 @@
                     <h1 class="modal-title fs-5" id="attachModalLabel">Отправить контент</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <img src="#" class="attach-img-form m-2" style="display: none" alt="preview-img"  id="attach-preview"/><input id="attach-content-file" name="attach_file" type="file" accept="image/*"/>
-                    <label for="text-with-attach">
-                        Текст сообщения
-                        <input id="text-with-attach" type="text" name="text"/>
-                    </label>
+                <form id="attachForm" action="/upload" enctype="multipart/form-data" class="dropzone">
+                    <div class="modal-body">
+                    </div>
+                </form>
+                <div class="form-group m-1">
+                    <label for="attachText">Текст сообщения</label>
+                    <input type="text" class="form-control" id="attachText" placeholder="Введите текст">
                 </div>
+
+
                 <div class="modal-footer">
                     <button type="button" id="cancel-attach" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     <button type="button" id="send-attach" class="btn btn-primary" data-bs-dismiss="modal">Отправить</button>
@@ -83,7 +82,7 @@
                         <div class="spinner-border" role="status">
                         </div>
                     </div>
-                    <ul id="users-list">
+                    <ul id="usersList">
                     </ul>
                 </div>
             </div>
@@ -92,6 +91,7 @@
                 <div class="input-group mb-3">
                     <input id="search-form" type="text" class="form-control" placeholder="Поиск" aria-label="Поиск" aria-describedby="basic-addon1">
                     <button type="button" class="btn btn-secondary" id="search-run">Искать</button>
+                    <button type="button" class="btn btn-danger" id="removeRoom">Удалить комнату</button>
                 </div>
                 <p class="text-primary text-center font-monospace" id="message-list-empty">Выберите комнату</p>
                 <div class="d-flex justify-content-center m-2" id="loader">
@@ -117,7 +117,7 @@
                     </div>
                 </div>
                 <div class="container-md">
-                    <ul id="rooms-list">
+                    <ul id="roomsList">
                     </ul>
                     <button class="btn btn-secondary mt-1" data-bs-toggle="modal" data-bs-target="#createRoomModal">Создать комнату</button>
                 </div>
@@ -129,8 +129,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
 <script type="module" src="{{ url_for('static', filename='script/onlineChat.js') }}"></script>
-<script type="module" src="{{ url_for('static', filename='script/chatView.js') }}"></script>
 <script type="module" src="{{ url_for('static', filename='script/chat.js') }}"></script>
 </body>
 </html>

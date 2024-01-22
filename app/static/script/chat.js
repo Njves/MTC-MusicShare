@@ -1,93 +1,16 @@
-import {ChatView} from './chatView.js';
 import {OnlineChatController} from "./onlineChat.js";
-const toastTrigger = document.getElementById('liveToastBtn')
 const toastLiveExample = document.getElementById('liveToast')
 const toastText = document.getElementById('toastBody')
-function showToast(toastText) {
-    if (toastTrigger) {
-        toastTrigger.addEventListener('click', () => {
-            toastText.innerHTML = toastText
-            const toast = new bootstrap.Toast(toastLiveExample)
-
-            toast.show()
-        })
+function showToast(header=null, text) {
+    if (header) {
+        $('.me-auto').html(header).css('color', 'green')
     }
+    toastText.innerHTML = text
+    const toast = new bootstrap.Toast(toastLiveExample)
+    toast.show()
 }
 
 
-const chatViewInstance = new ChatView();
-class User {
-    username = null;
-    constructor(username) {
-        this.username = username
-    }
-
-    toJson() {
-        return JSON.stringify({"username": this.username})
-    }
-
-    fromJson(string) {
-        let jsonObject = JSON.parse(string)
-        return new User(jsonObject['username'])
-    }
-}
-
-class Message {
-    _senderUsername = null;
-    _text = null;
-    _date = null
-    _roomId = null;
-    constructor(senderUsername, text, date, roomId) {
-        this._senderUsername = senderUsername;
-        this._text = text;
-        this._date = date;
-        this._roomId = roomId;
-    }
-
-    toJson() {
-        return JSON.stringify({"user": this._senderUsername, 'text': this._text, 'date': this._date, 'room_id': this._roomId})
-    }
-
-    fromJson(string) {
-        let jsonObject = JSON.parse(string)
-        return new Message(jsonObject['user'], jsonObject['text'], jsonObject['date'], jsonObject['room_id'])
-    }
-}
-
-class JoinMessage extends Message {
-    constructor(username, date) {
-        super(username, null, date);
-    }
-
-    toJson() {
-        return JSON.stringify({'username': this._senderUsername, 'date': this._date})
-    }
-
-    fromJson(string) {
-        let jsonObject = JSON.parse(string)
-        return new JoinMessage(jsonObject['username'], jsonObject['date'])
-    }
-}
-
-class Room {
-    _name = null;
-    _id = null;
-    _members = null;
-    constructor(name, id, members) {
-        this.name = name;
-        this.id = id;
-        this.members = members
-    }
-
-    toJson() {
-        return JSON.stringify({'name': this._name, 'id': this._id, 'members': this._members})
-    }
-
-    fromJson(string) {
-        let jsonObject = JSON.parse(string)
-        return new Room(jsonObject['name'], jsonObject['id'], jsonObject['members'])
-    }
-}
 
 class ChatController {
     _socket = null;
@@ -108,37 +31,38 @@ class ChatController {
     _currentRoom = null;
     _highLightedElement = null;
     _sendCreateRoom = null;
-    _initRoom = null;
-    _messagePart = 1
+    #count = 20
+    #offset = 0
+    attachedFiles = []
     constructor() {
-        this._socket = io({autoConnect: false, query: {
-                'user_id': 8
-            }});
-
         this.getCurrentUser().then(user => {
             this._currentUser = user
+            this._socket = io({autoConnect: true, query: {
+                    'user_id': user.id
+                }});
+            showToast('Сервер','Вы подключены к серверу')
             this.getRooms().then(rooms => {
+                this.subscribeOnEvent()
+                let currentRoom = parseInt(localStorage.getItem('userRoom'))
                 this.highLightCurrentRoom(this._currentRoom)
-                if(Cookies.get('current_room')) {
-                    this._initRoom = Cookies.get('current_room')
-                    this._roomsModels.forEach((value, key, map) => {
-                        if(value['id'] === parseInt(this._initRoom)) {
-                            this.onClickRoom(key)
-                        }
-                    })
-                }
+                this._initRoom = currentRoom
+                this._roomsModels.forEach((value, key, map) => {
+                    if(value['id'] === parseInt(this._initRoom)) {
+                        this.onClickRoom(key)
+                    }
+                })
+
             })
         })
 
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
-        this._socket.connect()
         this._roomsModels = new Map()
-        this._roomList = document.getElementById('rooms-list')
+        this._roomList = document.getElementById('roomsList')
         this._inputFileAttach = document.getElementById('attach-content-file')
         this._sendAttach = document.getElementById('send-attach')
         this._cancelAttach = document.getElementById('cancel-attach')
-        this._attachForm = document.getElementById('attach-form')
+        this._attachForm = document.getElementById('attachForm')
         this._loader = document.getElementById('loader')
         this._loaderRooms = document.getElementById('loaderRooms')
         this._searchForm = document.getElementById('search-form')
@@ -146,31 +70,44 @@ class ChatController {
         this._sendCreateRoom = document.getElementById('send-create-room')
         this.#onlineChatController.getOnlineUsers()
         $('.control-panel').css('pointer-events', 'none')
-        this.subscribeOnEvent()
+
         this.enterKeyListener()
         this.clickListener()
         this.createRoomListener()
         this.attachListener()
         $('attach-preview').change(function() {
-            let file = $('attach-content-file').prop('files')[0]
-            this.attr('src', URL.createObjectURL(file))
-            this.show()
+            // let file = $('attach-content-file').prop('files')[0]
+            // this.attr('src', URL.createObjectURL(file))
+            // this.show()
         })
         this.hideLoader(this._loader)
         this._chatWindow.addEventListener('scroll', (event) => {
-            if(this._chatWindow.scrollHeight - this._chatWindow.scrollTop)
+            if(this._chatWindow.scrollTop === 0) {
+                this.#offset += this.#count
+                this.getRoomHistory(this._currentRoom, false)
+            }
+            if(this._chatWindow.scrollHeight - this._chatWindow.scrollTop) {
                 if (!(this._chatWindow.scrollHeight - this._chatWindow.scrollTop <= this._chatWindow.clientHeight)) {
                     this._buttonScroll.style.display = 'block'
                     return;
                 }
+            }
             this._buttonScroll.style.display = 'none'
         })
         this._buttonScroll.addEventListener('click', event => {
             this.scrollToBottom(this._chatWindow)
         })
         this._searchRun.addEventListener('click', event => {
-
+            this._highLightedElement.style.backgroundColor = '#0a6ebd'
+            this._highLightedElement.style.pointerEvents = 'auto'
+            this.searchMessages()
         })
+        Dropzone.autoDiscover = false
+        // this._sendAttach.addEventListener('click', () => {
+        //     this.sendMessageWithAttach()
+        //
+        // })
+
         $('#roomPrivateCheck').change(function() {
             // Check if the checkbox is checked
             if ($(this).is(':checked')) {
@@ -184,18 +121,35 @@ class ChatController {
                 $('.room-password-container').remove();
             }
         });
-    }
+        this.removeRoomListener()
 
+    }
+    async removeRoomListener() {
+        $("#removeRoom").on('click', async () => {
+            let roomId = this._currentRoom.id
+            if (!roomId) {
+                showToast('Ошибка', 'Выберите комнату')
+            }
+            let response = await fetch('/room/' + roomId, {
+                method: 'DELETE'
+            })
+            if (!response.ok) {
+                showToast('Ошибка', 'Неудалось удалить комнату')
+                return
+            }
+            showToast('Успех', 'Комната удалена')
+        })
+    }
     roomIsEquals(room, anotherRoom) {
         return Object.entries(room).toString() === Object.entries(anotherRoom).toString()
     }
 
-    async highLightCurrentRoom() {
+    async highLightCurrentRoom(room) {
         if(!this._currentRoom)
             return;
-        this._roomsModels.forEach((value, key, map) => {
+        this._roomsModels.forEach((value, key, _) => {
             // Какая то проверка
-            if(this.roomIsEquals(this._currentRoom, value)) {
+            if(this.roomIsEquals(room, value)) {
                 key.style.backgroundColor = '#032f4f'
                 key.style.pointerEvents = 'none'
                 this._highLightedElement = key
@@ -212,7 +166,7 @@ class ChatController {
     async createRoom() {
         let roomName = document.getElementById('roomNameInput').value
         let roomPrivate = document.getElementById('roomPrivateCheck')
-        let json = JSON.stringify({'room_name': roomName, 'username': this._currentUser, 'room_private': roomPrivate})
+        let json = JSON.stringify({'name': roomName, 'room_private': roomPrivate})
         fetch('/create-room', {
             headers: {
                 "Content-Type": "application/json"
@@ -231,22 +185,30 @@ class ChatController {
     }
 
     searchMessages() {
-        fetch('/search-messages?' + new URLSearchParams({
-            username: this._currentUser,
+        fetch('/message/search?' + new URLSearchParams({
             query: this._searchForm.value,
         })).then((response) => {
             if(!response.ok)
                 alert('Неудалось запустить поиск')
             return response.json()
         }).then(data => {
+            $('#message-list-empty').html('Результат поиска ' + data.length + ' сообщение').show()
+            $('.control-panel').hide()
+            while (this._chatWindow.firstChild) {
+                this._chatWindow.firstChild.remove()
+            }
+            data.forEach(message => {
+                this.appendMessage(message, true)
+            })
+
             return data
         }).catch(error => {
             throw new Error(`Search message ${error}`)
         })
     }
     clearPreview() {
-        this._attachPreview.src = '#'
-        this._attachPreview.style.display = 'none'
+        // this._attachPreview.src = '#'
+        // this._attachPreview.style.display = 'none'
     }
 
     attachListener() {
@@ -257,26 +219,25 @@ class ChatController {
             this.clearPreview()
         })
         this._sendAttach.addEventListener('click', () => {
-            this.sendAttach()
+            // this.sendAttach()
         })
     }
 
-    sendAttach(event) {
+    sendAttach() {
         let data = new FormData()
-        data.append('attach_file', this._inputFileAttach.files[0])
-        data.append('username', this._currentUser)
-        data.append('text', document.getElementById('text-with-attach').value)
         data.append('room_id', this._currentRoom.id)
-        fetch('/attach', {
+        fetch('/message/attach', {
             method: 'POST',
             body: data
         }).then(response => {
+            if(!response.ok) {
+                throw new Error('Неудалось')
+            }
             return response.json()
-        }).then(data => {
-
+        }).catch(error => {
+            showToast('Неудалось отправить сообщение')
         })
     }
-
 
     subscribeOnEvent() {
         this._socket.on("connect", () => {
@@ -290,14 +251,21 @@ class ChatController {
         })
         this._socket.on("chat", data => {
             if(data['username'] !== this._currentUser.username)
-                this.notificationSound.play();
-            if(this._currentRoom['id'] === data['room_id']) {
-                this.appendMessage(data)
-            }
+                // this.notificationSound.play();
+                if(this._currentRoom['id'] === data['room_id']) {
+                    this.appendMessage(data, true)
+                }
 
         })
         this._socket.on('on_delete', data => {
 
+        })
+        this._socket.on('on_delete_room', data => {
+            this._roomsModels.forEach((value, key, map) => {
+                if(value['id'] === data['id']) {
+                    key.remove()
+                }
+            })
         })
         this._socket.on('notify', data => {
             if(!this._currentRoom)
@@ -309,7 +277,7 @@ class ChatController {
             })
         })
         this._socket.on('new_room', data => {
-            this.appendRoom(data['room'])
+            this.appendRoom(data)
         })
         this._socket.on('leave', data => {
             // Если пришло увдомление о выходи, удаляем из списка html и списка
@@ -321,15 +289,18 @@ class ChatController {
     }
 
     async onClickRoom(element) {
+        this.#offset = 0
+        this.#count = 20
         this.showLoader(this._loader)
         $('#message-list-empty').hide()
         $('.control-panel').css('pointer-events', 'auto')
         let room = this._roomsModels.get(element)
+        localStorage.setItem('userRoom', room.id)
         if(!this._currentRoom) {
-            this._socket.emit('join', {'room_id': room.id})
+            this._socket.emit('join', {'id': room.id})
         } else {
-            this._socket.emit('leave', {'room_id': this._currentRoom.id})
-            this._socket.emit('join', {'room_id': room.id})
+            this._socket.emit('leave', {'id': this._currentRoom.id})
+            this._socket.emit('join', {'id': room.id})
         }
 
         this._currentRoom = room
@@ -341,23 +312,34 @@ class ChatController {
             await this.highLightCurrentRoom(this._currentRoom)
         }
         await this.getRoomHistory(room)
+        $('.control-panel').show()
     }
 
-    async getRoomHistory(room) {
-        fetch(`/get-room/${room['id']}/${this._messagePart}`).then((response) => {
+    async getRoomHistory(room, change=true) {
+        fetch(`/get-room/${room['id']}?offset=${this.#offset}&count=${this.#count}`).then((response) => {
             if(!response.ok)
                 alert('Неудалось получить сообщение из комнаты')
             return response.json()
         }).then((data) => {
             this.hideLoader(this._loader)
-            while(this._chatWindow.firstChild) {
-                this._chatWindow.firstChild.remove()
+            if(change) {
+                while (this._chatWindow.firstChild) {
+                    this._chatWindow.firstChild.remove()
+                }
+            }
+            if(data.messages.length >= 0) {
+                $('#message-list-empty').hide()
+            }
+            if(data.messages.length === 0) {
+                $('#message-list-empty').show().html('В комнате нет сообщений')
             }
             data.messages.forEach(msg => {
                 this.appendMessage(msg)
             })
+            if(change) {
+                this.scrollToBottom(this._chatWindow)
+            }
 
-            this.scrollToBottom(this._chatWindow)
         })
 
     }
@@ -397,7 +379,7 @@ class ChatController {
 
     }
 
-    async appendMessage(data) {
+    async appendMessage(data, append=false) {
         if(!data['text'] && !data['attachments'])
             return
         let li = document.createElement("li");
@@ -407,7 +389,6 @@ class ChatController {
         if(this._currentUser['username'] === data['user']['username']) {
             $("<button class='btn btn-outline-danger m-1 p-1'>Удалить</button>")
                 .on('click', () => {
-                    console.log(data);
                     this.deleteMessage(li, data);
                 })
                 .appendTo(li);
@@ -430,12 +411,11 @@ class ChatController {
                 li.appendChild(attachmentImg)
             })
         }
-        this._chatWindow.appendChild(li);
-        this.scrollToBottom(this._chatWindow)
-    }
-
-    isCurrentUser(username) {
-        return this._currentUser === username
+        if(append) {
+            this._chatWindow.append(li)
+        } else {
+            this._chatWindow.prepend(li);
+        }
     }
 
     async getCurrentUser() {
@@ -451,11 +431,13 @@ class ChatController {
     }
 
     appendRoom(room) {
-
+        let div = document.createElement('div')
         let li = document.createElement("li")
         li.classList.add('room')
         li.append(document.createTextNode(`${room['name']}`))
-        this._roomList.appendChild(li)
+        div.appendChild(li)
+        this._roomList.appendChild(div)
+
         li.addEventListener('click', (event) => {
             this.onClickRoom(event.target)
         })
@@ -470,7 +452,7 @@ class ChatController {
             return response.json()
         }).then(data => {
             this.hideLoader(this._loaderRooms)
-            data.rooms.forEach(room => {
+            data.forEach((room) => {
                 this.appendRoom(room)
             })
             return data
@@ -478,6 +460,7 @@ class ChatController {
             throw new Error(`getRooms is invalid ${error}`)
         })
     }
+
     showLoader(loader) {
         loader.classList.remove('d-none')
     }
@@ -501,19 +484,55 @@ class ChatController {
             return response
         }).then(data => {
             if(data.ok) {
-                $(element).hide(500, () => $(element).remove())
+
+                $(element).hide(500, () => {
+                    $(element).remove()
+                    if(this._chatWindow.children.length === 0) {
+                        $('#message-list-empty').show()
+                    }
+                })
                 this._socket.emit('delete', message)
+
             }
+        })
+    }
+
+    sendMessageWithAttach() {
+        let text = $('#attachText').val()
+        let msg = {
+            text: text,
+            attachments: this.attachedFiles,
+            user_id: this._currentUser.id,
+            room_id: this._currentRoom.id
+        }
+        fetch('/message/attach', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(msg)
+        }).then(response => {
+            if(!response.ok) {
+                throw new Error('Неудалось')
+            }
+            this.attachedFiles = []
+            return response.json()
+        }).catch(error => {
+            showToast('Неудалось отправить сообщение')
         })
     }
 
     sendMessage() {
         let text = document.getElementById("message").value;
-        console.log(text.trim().length)
         if(text.trim().length <= 0)
             return;
-        let message = new Message(this._currentUser, text, Math.floor(new Date().getTime() / 1000), this._currentRoom.id)
-        this._socket.emit("new_message", message.toJson());
+        let message = {
+            user: this._currentUser,
+            text: text,
+            date: Math.floor(new Date().getTime() / 1000),
+            room_id: this._currentRoom.id
+        }
+        this._socket.emit("new_message", JSON.stringify(message));
         document.getElementById("message").value = "";
     }
 
@@ -538,3 +557,38 @@ class ChatController {
 }
 
 let controller = new ChatController()
+$(document).ready(function () {
+    $('#attachForm').dropzone({
+        autoProcessQueue: true, // Отключаем автоматическую обработку файлов
+        url: '/upload',
+        paramName: "file", // Имя параметра, которое будет отправлено на сервер
+        maxFilesize: 5, // Максимальный размер файла в мегабайтах
+        acceptedFiles: 'image/*', // Принимаем только изображения
+        addRemoveLinks: true, // Добавляем ссылку для удаления файла
+        init: function () {
+            var myDropzone = this;
+            // Нажатие кнопки "Отправить"
+            document.getElementById("send-attach").addEventListener("click", function (e) {
+                e.preventDefault();
+                myDropzone.removeAllFiles(true)
+                controller.sendMessageWithAttach()
+            });
+
+            // Удаление файла из Dropzone и предпросмотр
+            myDropzone.on("removedfile", function (file) {
+                // Удаление файла из сервера, если необходимо
+            });
+            myDropzone.on("errormultiple", function (files, response) {
+                showToast('Ошибка', `Неудалось загрузить файлы ${response.error}`)
+            })
+            myDropzone.on('sending', function() {
+                controller._sendAttach.disabled = true
+            })
+            myDropzone.on("success", function (files, response) {
+                showToast('Успех', `Файлы успешно отправлены`)
+                controller.attachedFiles.push(response[0])
+                controller._sendAttach.disabled = false
+            })
+        }
+    })
+})

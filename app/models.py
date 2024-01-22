@@ -50,7 +50,7 @@ class User(db.Model, UserMixin):
         return jwt.encode(
             {'user_id': self.id},
             current_app.config['SECRET_KEY'], algorithm='HS256')
-    
+
     @staticmethod
     def verify_token(token):
         try:
@@ -67,10 +67,15 @@ class Attachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(64), nullable=False)
     link = db.Column(db.String(256), nullable=False)
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'))
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), index=True)
 
     def to_dict(self):
         return {'type': self.type, 'link': self.link}
+
+    @staticmethod
+    def from_dict(attachment_dict):
+        return Attachment(type=attachment_dict.get('type'), link=attachment_dict.get('link'),
+                          message_id=attachment_dict.get('message_id'))
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -85,20 +90,26 @@ class Message(db.Model):
     receiver = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
     received_messages = db.relationship('User', backref='received_messages', lazy=True, foreign_keys=[receiver])
+
     def is_private(self):
         return self.receiver is not None
 
     def to_dict(self):
-        return {'id': self.id, 'user': self.user.to_dict(), 'text': self.text, 'receiver': self.receiver, 'date': str(self.date),
-                'attachments': [attachment.to_dict() for attachment in self.attachments], 'room_id': self.room_id}
+        return {'id': self.id, 'text': self.text, 'receiver': self.receiver, 'date': str(self.date),
+                'attachments': [attachment.to_dict() for attachment in self.attachments],
+                'user': self.user.to_dict(), 'room_id': self.room_id}
 
+    @staticmethod
+    def from_dict(message_dict):
+        return Message(text=message_dict.get('text'), room_id=message_dict.get('room_id'),
+                       user_id=message_dict.get('user_id'), receiver=message_dict.get('receiver_id'))
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False, unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
-    messages = db.relationship('Message', backref='room', lazy=True, order_by="Message.date.desc()")
+    messages = db.relationship('Message', backref='room', lazy='dynamic', order_by="Message.date.desc()")
 
     def __repr__(self):
         return self.name
@@ -108,14 +119,5 @@ class Room(db.Model):
 
     @staticmethod
     def is_exists(room_id):
-        return Room.query.get(room_id)
+        return Room.query.filter_by(id=room_id).first()
 
-    @staticmethod
-    def from_dict(room_dict):
-        room = Room()
-        messages = room_dict.get('messages') if room_dict.get('messages') else []
-        room.id = room_dict.get('id')
-        room.name = room_dict.get('name')
-        room.owner_id = room_dict.get('owner_id')
-        room.messages = messages
-        return room

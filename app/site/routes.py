@@ -21,7 +21,7 @@ def enter() -> Response:
     return redirect(url_for('site.index'))
 
 
-@bp.route("/chat", methods=['GET'])
+@bp.route("/site", methods=['GET'])
 @login_required
 def index() -> str | Response:
     """
@@ -39,20 +39,3 @@ def index() -> str | Response:
     if session.get('room_id'):
         session.pop('room_id')
     return render_template('site/index.html', rooms=rooms, all_users=users)
-
-@bp.route('/remove/<int:msg_id>', methods=['POST'])
-@login_required
-def remove_message(msg_id):
-    if message := Message.query.get(msg_id):
-        db.session.delete(message)
-        db.session.commit()
-        return redirect(request.referrer)
-    return redirect(request.referrer)
-@bp.route('/room', methods=['GET'])
-@login_required
-def get_room():
-    if room_id := session.get('room_id'):
-        if room := Room.query.get_or_404(room_id):
-            return room.to_dict()
-        return {}, http.HTTPStatus.NOT_FOUND
-    return {}, http.HTTPStatus.NOT_FOUND

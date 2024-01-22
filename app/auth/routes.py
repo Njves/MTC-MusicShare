@@ -4,7 +4,7 @@ import flask
 from flask import render_template, request, redirect, url_for, abort, Response
 from flask_login import login_user, logout_user, login_required, current_user
 
-from app import db, login_manager
+from app import db, login_manager, validation
 from app.auth import bp
 from app.models import User
 
@@ -28,7 +28,7 @@ def login() -> str | Response:
                 db.session.commit()
             login_user(user, remember=True)
             next_arg = flask.request.args.get('next')
-            return redirect(next_arg or url_for('site.index'))
+            return redirect(next_arg or url_for('chat.index'))
         response = flask.make_response({'error': 'Пароль неверный'}, 401)
         return response
     return render_template('chat/enter.html')
@@ -48,14 +48,15 @@ def register() -> str | Response:
             response = flask.make_response({'error': 'Такой пользователь уже существует'}, 409)
             return response
         user = User(username=reg_login)
-        if not user.set_password(reg_password):
+        user.set_password(reg_password)
+        if not validation.length_password_valid(reg_password):
             response = flask.make_response({'error': 'Слишком короткий пароль'}, 409)
             return response
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
         next_arg = flask.request.args.get('next')
-        return redirect(next_arg or url_for('site.index'))
+        return redirect(next_arg or url_for('chat.index'))
     return render_template('chat/register.html')
 
 
@@ -73,3 +74,17 @@ def logout() -> Response:
     response = redirect(url_for('auth.login'))
     response.delete_cookie('current_room')
     return response
+
+@bp.route('/access', methods=['GET'])
+def get_token():
+    token = flask.session.get('token')
+    if not token:
+        return {'error': 'Token is expired'}, 404
+    return token
+
+@bp.route('/refresh', methods=['GET'])
+def get_refresh():
+    token = flask.session.get('refresh')
+    if not token:
+        return {'error': 'Token is expired'}, 404
+    return token

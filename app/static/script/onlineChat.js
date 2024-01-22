@@ -1,6 +1,6 @@
 
 class OnlineChatView {
-    #onlineWindow = $('#users-list')
+    #onlineWindow = $('#usersList')
     #loader = $('#loaderOnline');
 
     showLoader() {
@@ -12,7 +12,7 @@ class OnlineChatView {
     }
 
     addUser(user) {
-        $(`<li id="${user['username']}">${user['username']}</li>`).appendTo(this.#onlineWindow)
+        $(`<li style="color: ${user.color}" id="${user['username']}">${user['username']}</li>`).appendTo(this.#onlineWindow)
     }
 
     removeUser(user) {

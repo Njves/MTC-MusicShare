@@ -6,6 +6,7 @@ import os
 import uuid
 from typing import Callable
 
+from sqlalchemy.orm import joinedload
 from typing_extensions import List
 
 import app.validation as validation
@@ -19,24 +20,31 @@ from werkzeug.utils import secure_filename
 
 from app import socketio, db
 from app.chat import bp
+from app.chat_socket.routes import users
 from app.image_converter import compress_image
 from app.models import Message, Room, Attachment, User
 
+@bp.before_request
+def before():
+    print(request.files)
 
-def update_last_seen(args) -> None:
+@bp.after_request
+def after(response):
+    print(response.headers)
+    print(response.data)
+    return response
+
+@bp.route("/chat", methods=['GET'])
+@login_required
+def index():
     """
-    Обновляет последнее посещение пользователя в базе данных
-    :param args: кортеж из объекта приложения и пользовательского id
+    Возвращает html страницу чата
+    :return:
     """
-    app, user_id = args
-    with app.app_context():
-        user = User.query.get(user_id)
-        user.last_seen = datetime.datetime.utcnow()
-        db.session.add(user)
-        db.session.commit()
+    return render_template('chat/index.html')
 
 
-@bp.route('/search-message')
+@bp.route('/message/search')
 def search_messages() -> Response:
     """
     Осуществляет поиск по сообщениям с помощью SQL функции like
@@ -46,7 +54,7 @@ def search_messages() -> Response:
     query = request.args.get('query')
     result = Message.query.filter(Message.text.like("%" + query + "%")).all()
     result = [message.to_dict() for message in result]
-    return jsonify({'result': result})
+    return jsonify(result)
 
 
 @bp.route("/get-current-user", methods=['GET'])
@@ -122,8 +130,10 @@ def get_private_messages(user_id: int, part: int) -> (dict, int):
         return {'error': 'Unsupported value'}, http.HTTPStatus.BAD_REQUEST.value
     user_dict: dict = user.to_dict()
     user_dict['messages']: List[Message] = [message.to_dict() for message in user.received_messages[
-                                                              (part - 1) * current_app.config['MESSAGE_PART']:
-                                                              part * current_app.config['MESSAGE_PART']][::-1]]
+                                                                             (part - 1) * current_app.config[
+                                                                                 'MESSAGE_PART']:
+                                                                             part * current_app.config['MESSAGE_PART']][
+                                                                             ::-1]]
     return user_dict, 200
 
 
@@ -136,7 +146,6 @@ def get_rooms() -> Response:
     """
     rooms: List[Room] = [room.to_dict() for room in Room.query.all()]
     response: Response = jsonify(rooms)
-    print(response.json)
     # response.headers['Cache-Control'] = 'public,max-age=300'
     return response
 
@@ -150,7 +159,7 @@ def get_missed_message() -> Response:
     """
     missed_messages: List[Message] = Message.query.where(Message.date > current_user.last_seen).all()
     missed_messages = [message.to_dict() for message in missed_messages]
-    socketio.start_background_task(update_last_seen, (current_app._get_current_object(), current_user.id,))
+    current_user.update_last_seen()
     return jsonify(missed_messages)
 
 
@@ -162,11 +171,25 @@ def create_room() -> (dict, int):
     :return: JSON представление новой комнаты
     """
     room_json = request.json
-    new_room = Room.from_dict(room_json)
+    new_room = Room(name=room_json.get('name'), owner_id=current_user.id)
     db.session.add(new_room)
     db.session.commit()
     socketio.emit('new_room', new_room.to_dict())
     return new_room.to_dict(), 201
+
+
+@bp.route('/room/<int:room_id>', methods=['DELETE'])
+@login_required
+def remove_room(room_id: int) -> (dict, int):
+    room = Room.query.filter_by(id=room_id).first()
+    if not room:
+        return {'error': 'Room not found'}, 404
+    if current_user.id != room.owner_id:
+        return {'error': 'You are not the owner of this room'}, 403
+    db.session.delete(room)
+    db.session.commit()
+    socketio.emit('on_delete_room', {'id': room_id})
+    return {}, 204
 
 
 @bp.route("/get-notify-message", methods=['GET'])
@@ -187,17 +210,20 @@ def get_history_by_room_name(room_id: int) -> (dict, int):
     :param part: часть по 50 сообщений
     :return: ошибка в случае неудачи, json комнаты с сообщениями
     """
-    count = request.args.get('count') if request.args.get('count') else 100
+    count = request.args.get('count') if request.args.get('count') else 30
     offset = request.args.get('offset') if request.args.get('offset') else 0
     room: Room = Room.query.filter_by(id=room_id).first()
     if not room:
         return {'error': 'The room was not found'}, http.HTTPStatus.NOT_FOUND.value
     room_dict = room.to_dict()
-    room_dict['messages'] = room.messages[offset: offset + count]
+
+    room_dict['messages'] = []
+    room_messages = room.messages.options(joinedload(Message.attachments), joinedload(Message.user)).limit(
+        count).offset(offset)
+    for message in room_messages:
+        room_dict['messages'].append(message.to_dict())
+
     response = jsonify(room_dict)
-    response.delete_cookie('current_room')
-    response.set_cookie('current_room', f'{room.id}', 60 * 60 * 24 * 30)
-    response.headers['Cache-Control'] = 'public,max-age=300'
     return response
 
 
@@ -211,34 +237,46 @@ def get_users_online() -> Response:
     return jsonify([user.to_dict() for user in users.keys()])
 
 
-@bp.route("/attach", methods=['POST'])
+@bp.route('/upload', methods=['POST'])
+@login_required
+def upload_file():
+    if 'file' not in request.files:
+        return {'error': 'The file is not attached'}, http.HTTPStatus.BAD_REQUEST.value
+    files = request.files.getlist('file')
+    attachments = []
+    current_app.logger.debug(files)
+    for file in files:
+        if file.filename == '':
+            return {'error': 'The file name is missing'}, http.HTTPStatus.BAD_REQUEST.value
+        user_filename = secure_filename(file.filename)
+        filename = f'{user_filename}_${uuid.uuid4()}.png'
+        link = os.path.join(os.path.join('app', current_app.config['UPLOAD_FOLDER']), filename)
+        file.save(link)
+        if 'image' in file.content_type:
+            compress_image(link)
+        link = url_for('chat.get_content', name=filename)
+        attachment = Attachment(type=file.content_type, link=link)
+        attachments.append(attachment)
+    current_app.logger.debug(attachments)
+    response = jsonify([attachment.to_dict() for attachment in attachments])
+    response.status_code = 201
+    return response
+
+
+@bp.route("/message/attach", methods=['POST'])
 @login_required
 def attach() -> (dict, int):
     """
     Создает сообщение с прикрепленным медиа файлом (музыка, изображение)
     :return: JSON объект сообщения с attachment
     """
-    if 'attach_file' not in request.files:
-        return {'error': 'The file is not attached'}, http.HTTPStatus.BAD_REQUEST.value
-    file = request.files.get('attach_file')
-    if file.filename == '':
-        return {'error': 'The file name is missing'}, http.HTTPStatus.BAD_REQUEST.value
-    user_filename = secure_filename(file.filename)
-    filename, ext = user_filename.rsplit('.')
-    filename = f'{filename}_${uuid.uuid4()}.png'
-    text = request.form.get('text')
-    room_id = request.form.get('room_id')
-    if not text:
-        text = ''
-    link = os.path.join(os.path.join('app', current_app.config['UPLOAD_FOLDER']), filename)
-    file.save(link)
-    if 'image' in file.content_type:
-        compress_image(link)
-    link = url_for('chat.get_content', name=filename)
-    message = Message(user_id=current_user.id, text=text, date=datetime.datetime.utcnow(), room_id=room_id)
-    attachment = Attachment(type=file.content_type, link=link)
-    message.attachments.append(attachment)
-    db.session.add(attachment)
+    attachments_dict: List[Attachment] = request.json.get('attachments')
+    attachments = []
+    for attachment_dict in attachments_dict:
+        attachments.append(Attachment.from_dict(attachment_dict))
+    message_json: dict = request.json
+    message: Message = Message.from_dict(message_json)
+    message.attachments = attachments
     db.session.add(message)
     db.session.commit()
     socketio.emit('chat', message.to_dict())
@@ -293,6 +331,5 @@ def get_content(name) -> Response:
     """
     response = send_from_directory(current_app.config['UPLOAD_FOLDER'], name)
     response.headers['Cache-Control'] = 'public,max-age=300'
+    response.direct_passthrough = False
     return response
-
-
