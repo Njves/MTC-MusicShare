@@ -6,7 +6,7 @@ WORKDIR /home/chat
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt && pip install gunicorn
-RUN MKDIR -p /app/content
+RUN mkdir -p /app/content
 COPY app app
 COPY main.py config.py boot.sh ./
 RUN chmod +x boot.sh
