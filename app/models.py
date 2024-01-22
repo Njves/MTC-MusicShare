@@ -83,7 +83,7 @@ class Message(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow, comment='last seen user in online')
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'),
                         nullable=True)
-    attachments = db.relationship('Attachment', backref='message', lazy=True)
+    attachments = db.relationship('Attachment', backref='message', lazy=True, cascade='all,delete')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                         nullable=True)
     user = db.relationship('User', backref='messages', lazy=True, foreign_keys=[user_id])
