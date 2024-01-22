@@ -175,7 +175,7 @@ class ChatController {
             body: json
         }).then((response) => {
             if(!response.ok)
-                alert('Неудалось создать комнату')
+                showToast('Ошибка', 'Вы не можете создать более 3-х комнат')
             return response
         }).then((data => {
 

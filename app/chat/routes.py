@@ -1,38 +1,26 @@
 import datetime
-import functools
 import http
-import json
 import os
 import uuid
-from typing import Callable
-
-from sqlalchemy.orm import joinedload
-from typing_extensions import List
-
-import app.validation as validation
 
 from email_validator import validate_email, EmailNotValidError
-from flask import request, render_template, redirect, jsonify, url_for, current_app, send_from_directory, make_response, \
-    Response
-from flask_login import current_user, login_required, login_user
-from flask_socketio import emit, join_room, leave_room, disconnect
+from flask import request, render_template, jsonify, url_for, current_app, send_from_directory, Response
+from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
+from typing_extensions import List
 from werkzeug.utils import secure_filename
 
+import app.validation as validation
 from app import socketio, db
 from app.chat import bp
 from app.chat_socket.routes import users
 from app.image_converter import compress_image
 from app.models import Message, Room, Attachment, User
 
+
 @bp.before_request
 def before():
     print(request.files)
-
-@bp.after_request
-def after(response):
-    print(response.headers)
-    print(response.data)
-    return response
 
 @bp.route("/chat", methods=['GET'])
 @login_required
@@ -172,6 +160,8 @@ def create_room() -> (dict, int):
     """
     room_json = request.json
     new_room = Room(name=room_json.get('name'), owner_id=current_user.id)
+    if Room.query.filter_by(owner_id=current_user.id).count() >= 3:
+        return {'error': 'You cannot create more than 3 rooms'}, 409
     db.session.add(new_room)
     db.session.commit()
     socketio.emit('new_room', new_room.to_dict())
