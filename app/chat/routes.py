@@ -4,7 +4,7 @@ import os
 import uuid
 
 from email_validator import validate_email, EmailNotValidError
-from flask import request, render_template, jsonify, url_for, current_app, send_from_directory, Response
+from flask import request, render_template, jsonify, url_for, current_app, send_from_directory, Response, redirect
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 from typing_extensions import List
@@ -29,20 +29,29 @@ def index():
     Возвращает html страницу чата
     :return:
     """
+    if not current_user.is_authenticated:
+        return redirect('auth.login')
     return render_template('chat/index.html')
 
 
 @bp.route('/messages/search')
-def search_messages() -> Response:
+def search_messages() -> (dict, int):
     """
     Осуществляет поиск по сообщениям с помощью SQL функции like
     Поиск происходит по тексту сообщения
     :return:
     """
     query = request.args.get('query')
-    result = Message.query.filter(Message.text.like("%" + query + "%")).all()
+    if not query:
+        return {'error': 'query param cannot be empty'}, 400
+    room_id = request.args.get('room_id')
+    if not room_id:
+        return {'error': 'room_id param cannot be empty'}, 400
+    room = Room.query.get_or_404(room_id)
+    result = room.messages.filter(Message.text.like("%" + query + "%"))
+    result = result.options(joinedload(Message.attachments), joinedload(Message.user))
     result = [message.to_dict() for message in result]
-    return jsonify(result)
+    return result
 
 
 @bp.route("/user/current", methods=['GET'])
@@ -160,7 +169,7 @@ def create_room() -> (dict, int):
     """
     room_json = request.json
     if not validation.length_field(room_json.get('name'), 4, 18):
-        return {'error': 'The name of the room must be from 4 to 32 characters'}, 409
+        return {'error': 'The name of the room must be from 4 to 32 characters'}, 400
     new_room = Room(name=room_json.get('name'), owner_id=current_user.id)
     if Room.query.filter_by(owner_id=current_user.id).count() >= 3:
         return {'error': 'You cannot create more than 3 rooms'}, 409

@@ -34,6 +34,7 @@ class ChatController {
     #count = 20
     #offset = 0
     attachedFiles = []
+    #searchMode = false
     constructor() {
         this.getCurrentUser().then(user => {
             this._currentUser = user
@@ -54,7 +55,7 @@ class ChatController {
 
             })
         })
-
+        $('#loadingMessage').hide()
         this._chatWindow = document.getElementById("chat-messages");
         this._buttonScroll = document.getElementById('button_scroll_down')
         this._roomsModels = new Map()
@@ -69,6 +70,7 @@ class ChatController {
         this._searchRun = document.getElementById('search-run')
         this._sendCreateRoom = document.getElementById('send-create-room')
         this.#onlineChatController.getOnlineUsers()
+
         $('.control-panel').css('pointer-events', 'none')
 
         this.enterKeyListener()
@@ -82,8 +84,7 @@ class ChatController {
         })
         this.hideLoader(this._loader)
         this._chatWindow.addEventListener('scroll', (event) => {
-            if(this._chatWindow.scrollTop === 0) {
-                this.#offset += this.#count
+            if(this._chatWindow.scrollTop === 0 && !this.#searchMode) {
                 this.getRoomHistory(this._currentRoom, false)
             }
             if(this._chatWindow.scrollHeight - this._chatWindow.scrollTop) {
@@ -174,11 +175,18 @@ class ChatController {
             method: 'POST',
             body: json
         }).then((response) => {
-            if(!response.ok)
-                showToast('Ошибка', 'Вы не можете создать более 3-х комнат')
+            if(!response.ok) {
+                $('#alertRoom').show()
+                if(response.status === 409)
+                    $('#alertRoom').html('Вы не можете создать более 3-х комнат')
+                else if(response.status === 400)
+                    $('#alertRoom').html('Название комнаты не должно превышать 18 символов и быть длинее 4-х символов')
+                throw new Error('Error')
+            }
             return response
         }).then((data => {
-
+            $('#alertRoom').hide()
+            $('#cancel-create-room').trigger({'type': 'click'})
         })).catch(error => {
             throw new Error(`create room is invalid ${error}`)
         })
@@ -187,11 +195,16 @@ class ChatController {
     searchMessages() {
         fetch('/messages/search?' + new URLSearchParams({
             query: this._searchForm.value,
+            room_id: this._currentRoom.id
         })).then((response) => {
-            if(!response.ok)
-                alert('Неудалось запустить поиск')
+            if(!response.ok) {
+                if(response.status === 400)
+                    showToast('Ошибка', 'Невозможно выполнить операцию поиска')
+                    throw new Error(response.json()['error'])
+            }
             return response.json()
         }).then(data => {
+            this.#searchMode = true
             $('#message-list-empty').html('Результат поиска ' + data.length + ' сообщение').show()
             $('.control-panel').hide()
             while (this._chatWindow.firstChild) {
@@ -250,11 +263,13 @@ class ChatController {
             }
         })
         this._socket.on("chat", data => {
+            $('#loadingMessage').hide()
+            $('.send-img').show()
             if(data['username'] !== this._currentUser.username)
-                // this.notificationSound.play();
-                if(this._currentRoom['id'] === data['room_id']) {
-                    this.appendMessage(data, true)
-                }
+                this.notificationSound.play();
+            if(this._currentRoom['id'] === data['room_id']) {
+                this.appendMessage(data, true)
+            }
             this.scrollToBottom(this._chatWindow)
 
         })
@@ -269,6 +284,14 @@ class ChatController {
             })
         })
         this._socket.on('notify', data => {
+            this._roomsModels.forEach((value, key, map) => {
+                if(value.id === this._currentRoom.id)
+                    return
+                if(value.id === data.room_id) {
+                    showToast('Новое сообщение', 'Новое сообщение в комнате ' + value.name)
+                }
+            })
+
             if(!this._currentRoom)
                 return
             this._roomsModels.forEach((value, key, map) => {
@@ -293,9 +316,12 @@ class ChatController {
         this.#offset = 0
         this.#count = 20
         this.showLoader(this._loader)
+        $('.control-panel').hide()
         $('#message-list-empty').hide()
+        $('#search-form').val('')
         $('.control-panel').css('pointer-events', 'auto')
         let room = this._roomsModels.get(element)
+        $('#mainText').html(`Чатик (${room.name})`)
         localStorage.setItem('userRoom', room.id)
         if(!this._currentRoom) {
             this._socket.emit('join', {'id': room.id})
@@ -319,7 +345,7 @@ class ChatController {
     async getRoomHistory(room, change=true) {
         fetch(`/room/${room['id']}?offset=${this.#offset}&count=${this.#count}`).then((response) => {
             if(!response.ok)
-                alert('Неудалось получить сообщение из комнаты')
+                showToast('Ошибка', 'Неудалось получить сообщение из комнаты')
             return response.json()
         }).then((data) => {
             this.hideLoader(this._loader)
@@ -328,10 +354,20 @@ class ChatController {
                     this._chatWindow.firstChild.remove()
                 }
             }
-            if(data.messages.length >= 0) {
+
+            if(data.messages.length > 0) {
                 $('#message-list-empty').hide()
+                if(this.#offset !== 0) {
+                    let child = this._chatWindow.firstChild.parentNode
+                    let p = document.createElement('p')
+                    p.appendChild(document.createTextNode('Старые сообщения'))
+                    p.style.textAlign = 'center'
+                    child.prepend(p)
+                }
+                this.#offset += this.#count
+
             }
-            if(data.messages.length === 0) {
+            if(data.messages.length === 0 && this._chatWindow.children.length === 0) {
                 $('#message-list-empty').show().html('В комнате нет сообщений')
             }
             data.messages.forEach(msg => {
@@ -369,7 +405,7 @@ class ChatController {
             body: JSON.stringify(message)
         }).then((response) => {
             if(!response.ok)
-                alert('Неудалось изменить сообщение')
+                showToast('Ошибка', 'Неудалось изменить сообщение')
             return response.json()
         }).then(data => {
             this.editElement(element, data)
@@ -381,6 +417,9 @@ class ChatController {
     }
 
     async appendMessage(data, append=false) {
+        if(this._chatWindow.children.length === 0) {
+            $('#message-list-empty').hide()
+        }
         if(!data['text'] && !data['attachments'])
             return
         let li = document.createElement("li");
@@ -393,30 +432,33 @@ class ChatController {
                     this.deleteMessage(li, data);
                 })
                 .appendTo(li);
-            $("<button class='btn btn-outline-primary m-1 p-1'>Редактировать</button>")
-                .on('click', () => {
-                    // this.editMessage(li, data)
-                    $(`#${data['id']}`).hide
-                })
-                .appendTo(li);
+            // $("<button class='btn btn-outline-primary m-1 p-1'>Редактировать</button>")
+            //     .on('click', () => {
+            //     })
+            //     .appendTo(li);
         }
         $(`<br/><span id=${data['id']}>${data['text']}</span>`).addClass('message-text').appendTo(li)
+
         if(data['attachments']) {
+            let div = document.createElement('div')
+            div.classList.add('d-flex')
+            div.classList.add('flex-wrap')
             data['attachments'].forEach(attachment => {
                 let attachmentImg = document.createElement('img')
                 attachmentImg.src = attachment['link']
                 attachmentImg.loading = 'lazy'
-                attachmentImg.style.maxWidth = '540px'
-                attachmentImg.style.minWidth = '340px'
-                li.appendChild(document.createElement('br'));
-                li.appendChild(attachmentImg)
+                attachmentImg.width = 200
+                attachmentImg.classList.add('m-1')
+                div.appendChild(attachmentImg)
             })
+            li.appendChild(div)
         }
         if(append) {
             this._chatWindow.append(li)
         } else {
             this._chatWindow.prepend(li);
         }
+
     }
 
     async getCurrentUser() {
@@ -449,7 +491,7 @@ class ChatController {
         this.showLoader(this._loaderRooms)
         return fetch('/rooms').then(response => {
             if(!response.ok)
-                alert('Неудалось получить список комнат')
+                showToast('Ошибка','Неудалось получить список комнат')
             return response.json()
         }).then(data => {
             this.hideLoader(this._loaderRooms)
@@ -479,13 +521,12 @@ class ChatController {
             body: JSON.stringify({'username': this._currentUser})
         }).then(response => {
             if(!response.ok) {
-                alert('Неудалось удалить сообщение')
+                showToast('Ошибка', 'Неудалось удалить сообщение')
                 return
             }
             return response
         }).then(data => {
             if(data.ok) {
-
                 $(element).hide(500, () => {
                     $(element).remove()
                     if(this._chatWindow.children.length === 0) {
@@ -499,6 +540,8 @@ class ChatController {
     }
 
     sendMessageWithAttach() {
+        $('#loadingMessage').show()
+        $('.send-img').hide()
         let text = $('#attachText').val()
         let msg = {
             text: text,
@@ -524,6 +567,8 @@ class ChatController {
     }
 
     sendMessage() {
+        $('#loadingMessage').show()
+        $('.send-img').hide()
         let text = document.getElementById("message").value;
         if(text.trim().length <= 0)
             return;

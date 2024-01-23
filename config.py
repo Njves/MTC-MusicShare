@@ -22,3 +22,8 @@ class Config(object):
     SQLALCHEMY_ECHO = True
     MESSAGE_PART = 10
     MAX_CONTENT_LENGTH = 16 * 10 ** 6
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 60,
+        'pool_pre_ping': True
+    }

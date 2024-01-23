@@ -57,9 +57,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div id='alertRoom' class="alert alert-danger m-2" style="display: none" role="alert">
+                    </div>
                     <div class="form-group">
                         <label for="roomNameInput">Название комнаты</label>
-                        <input type="text" class="form-control" minlength="4" maxlength="32" id="roomNameInput" placeholder="Введите название комнаты" required>
+                        <input type="text" class="form-control" minlength="4" maxlength="18" id="roomNameInput" placeholder="Введите название комнаты" required>
                     </div>
                     <div class="form-check mt-1">
                         <input type="checkbox" class="form-check-input" id="roomPrivateCheck">
@@ -68,7 +70,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="cancel-create-room" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" id="send-create-room" class="btn btn-primary" data-bs-dismiss="modal">Отправить</button>
+                    <button type="button" id="send-create-room" class="btn btn-primary">Отправить</button>
                 </div>
             </div>
         </div>
@@ -87,7 +89,7 @@
                 </div>
             </div>
             <div class="col-sm-8 window p-2">
-                <p class="text-center text-primary">Чатик</p>
+                <p class="text-center text-primary" id="mainText">Чатик</p>
                 <div class="input-group mb-3">
                     <input id="search-form" type="text" class="form-control" minlength="1" placeholder="Введите запрос..." aria-label="Поиск" aria-describedby="basic-addon1">
                     <button type="button" class="btn btn-secondary" id="search-run">Искать</button>
@@ -104,7 +106,10 @@
                     <div class="input-group mb-3">
                         <button class="btn attach" id="attach"  data-bs-toggle="modal" data-bs-target="#attachModal"><img class="attach-img" src="{{ url_for('static', filename='icon/paperclip.svg') }}"/></button>
                         <input maxlength="256" minlength="1" required id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
-                        <button class="btn send-msg" id="send_msg"><img class="send-img" src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
+                        <button class="btn send-msg" id="send_msg"><img class="send-img" src="{{ url_for('static', filename='icon/send.svg') }}"/>
+                            <div id="loadingMessage" class="spinner-border" role="status">
+                            </div>
+                        </button>
                         <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
                     </div>
                 </div>
@@ -116,7 +121,7 @@
                     <div class="spinner-border" role="status">
                     </div>
                 </div>
-                <div class="container-md">
+                <div class="container-md d-flex justify-content-center flex-column">
                     <ul id="roomsList">
                     </ul>
                     <button class="btn btn-secondary mt-1" data-bs-toggle="modal" data-bs-target="#createRoomModal">Создать комнату</button>
