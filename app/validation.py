@@ -14,6 +14,11 @@ def user_same_name_valid(app, username: str) -> bool:
     with app.app_context():
         return bool(User.query.filter_by(username=username).first())
 
+
 def user_exists_by_id(app, id):
     with app.app_context():
         return bool(User.query.get(id))
+
+
+def length_field(string, min_length=0, max_length=128):
+    return min_length <= len(string) <= max_length

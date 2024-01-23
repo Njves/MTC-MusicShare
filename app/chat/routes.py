@@ -32,7 +32,7 @@ def index():
     return render_template('chat/index.html')
 
 
-@bp.route('/message/search')
+@bp.route('/messages/search')
 def search_messages() -> Response:
     """
     Осуществляет поиск по сообщениям с помощью SQL функции like
@@ -45,7 +45,7 @@ def search_messages() -> Response:
     return jsonify(result)
 
 
-@bp.route("/get-current-user", methods=['GET'])
+@bp.route("/user/current", methods=['GET'])
 @login_required
 def get_current_user() -> (dict, int):
     """
@@ -108,7 +108,7 @@ def get_user(user_id: int) -> (dict, int):
     return user.to_dict()
 
 
-@bp.route('/get-private-messages/<int:user_id>/<int:part>')
+@bp.route('/messages/<int:user_id>/<int:part>')
 @login_required
 def get_private_messages(user_id: int, part: int) -> (dict, int):
     user: User = User.query.filter_by(id=user_id).first()
@@ -125,7 +125,7 @@ def get_private_messages(user_id: int, part: int) -> (dict, int):
     return user_dict, 200
 
 
-@bp.route("/get-rooms")
+@bp.route("/rooms")
 @login_required
 def get_rooms() -> Response:
     """
@@ -138,7 +138,7 @@ def get_rooms() -> Response:
     return response
 
 
-@bp.route('/get-missed-messages', methods=['GET'])
+@bp.route('/messages/missed', methods=['GET'])
 @login_required
 def get_missed_message() -> Response:
     """
@@ -151,7 +151,7 @@ def get_missed_message() -> Response:
     return jsonify(missed_messages)
 
 
-@bp.route("/create-room", methods=['POST'])
+@bp.route("/room", methods=['POST'])
 @login_required
 def create_room() -> (dict, int):
     """
@@ -159,6 +159,8 @@ def create_room() -> (dict, int):
     :return: JSON представление новой комнаты
     """
     room_json = request.json
+    if not validation.length_field(room_json.get('name'), 4, 18):
+        return {'error': 'The name of the room must be from 4 to 32 characters'}, 409
     new_room = Room(name=room_json.get('name'), owner_id=current_user.id)
     if Room.query.filter_by(owner_id=current_user.id).count() >= 3:
         return {'error': 'You cannot create more than 3 rooms'}, 409
@@ -182,7 +184,7 @@ def remove_room(room_id: int) -> (dict, int):
     return {}, 204
 
 
-@bp.route("/get-notify-message", methods=['GET'])
+@bp.route("/content/notify", methods=['GET'])
 def get_notify() -> Response:
     """
     Возвращает звук уведомления
@@ -191,7 +193,7 @@ def get_notify() -> Response:
     return send_from_directory('static/sound', 'msg_notify.mp3')
 
 
-@bp.route("/get-room/<int:room_id>", methods=['GET'])
+@bp.route("/room/<int:room_id>", methods=['GET'])
 @login_required
 def get_history_by_room_name(room_id: int) -> (dict, int):
     """
@@ -217,7 +219,7 @@ def get_history_by_room_name(room_id: int) -> (dict, int):
     return response
 
 
-@bp.route("/get-online", methods=['GET'])
+@bp.route("/users/online", methods=['GET'])
 @login_required
 def get_users_online() -> Response:
     """
@@ -311,7 +313,7 @@ def edit_message(msg_id: int) -> (dict, int):
     return old_message.to_dict(), 201
 
 
-@bp.route('/get-content/<path:name>', methods=['GET'])
+@bp.route('/content/<path:name>', methods=['GET'])
 @login_required
 def get_content(name) -> Response:
     """

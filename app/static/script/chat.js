@@ -16,7 +16,7 @@ class ChatController {
     _socket = null;
     #onlineChatController = new OnlineChatController();
     _currentUser = null;
-    notificationSound = new Audio("/get-notify-message")
+    notificationSound = new Audio("/content/notify")
     _chatWindow = null;
     _roomList = null;
     _inputFileAttach = null;
@@ -167,7 +167,7 @@ class ChatController {
         let roomName = document.getElementById('roomNameInput').value
         let roomPrivate = document.getElementById('roomPrivateCheck')
         let json = JSON.stringify({'name': roomName, 'room_private': roomPrivate})
-        fetch('/create-room', {
+        fetch('/room', {
             headers: {
                 "Content-Type": "application/json"
             },
@@ -185,7 +185,7 @@ class ChatController {
     }
 
     searchMessages() {
-        fetch('/message/search?' + new URLSearchParams({
+        fetch('/messages/search?' + new URLSearchParams({
             query: this._searchForm.value,
         })).then((response) => {
             if(!response.ok)
@@ -255,6 +255,7 @@ class ChatController {
                 if(this._currentRoom['id'] === data['room_id']) {
                     this.appendMessage(data, true)
                 }
+            this.scrollToBottom(this._chatWindow)
 
         })
         this._socket.on('on_delete', data => {
@@ -316,7 +317,7 @@ class ChatController {
     }
 
     async getRoomHistory(room, change=true) {
-        fetch(`/get-room/${room['id']}?offset=${this.#offset}&count=${this.#count}`).then((response) => {
+        fetch(`/room/${room['id']}?offset=${this.#offset}&count=${this.#count}`).then((response) => {
             if(!response.ok)
                 alert('Неудалось получить сообщение из комнаты')
             return response.json()
@@ -419,7 +420,7 @@ class ChatController {
     }
 
     async getCurrentUser() {
-        return fetch('get-current-user').then(response => {
+        return fetch('user/current').then(response => {
             if(!response.ok)
                 throw new Error('Server is response faield')
             return response.json()
@@ -446,7 +447,7 @@ class ChatController {
 
     async getRooms() {
         this.showLoader(this._loaderRooms)
-        return fetch('get-rooms').then(response => {
+        return fetch('/rooms').then(response => {
             if(!response.ok)
                 alert('Неудалось получить список комнат')
             return response.json()

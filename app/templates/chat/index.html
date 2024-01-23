@@ -37,7 +37,7 @@
                 </form>
                 <div class="form-group m-1">
                     <label for="attachText">Текст сообщения</label>
-                    <input type="text" class="form-control" id="attachText" placeholder="Введите текст">
+                    <input type="text" class="form-control" minlength="1" maxlength="256" id="attachText" placeholder="Введите текст">
                 </div>
 
 
@@ -59,7 +59,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="roomNameInput">Название комнаты</label>
-                        <input type="text" class="form-control" id="roomNameInput" placeholder="Введите название комнаты">
+                        <input type="text" class="form-control" minlength="4" maxlength="32" id="roomNameInput" placeholder="Введите название комнаты" required>
                     </div>
                     <div class="form-check mt-1">
                         <input type="checkbox" class="form-check-input" id="roomPrivateCheck">
@@ -89,7 +89,7 @@
             <div class="col-sm-8 window p-2">
                 <p class="text-center text-primary">Чатик</p>
                 <div class="input-group mb-3">
-                    <input id="search-form" type="text" class="form-control" placeholder="Поиск" aria-label="Поиск" aria-describedby="basic-addon1">
+                    <input id="search-form" type="text" class="form-control" minlength="1" placeholder="Введите запрос..." aria-label="Поиск" aria-describedby="basic-addon1">
                     <button type="button" class="btn btn-secondary" id="search-run">Искать</button>
                     <button type="button" class="btn btn-danger" id="removeRoom">Удалить комнату</button>
                 </div>
@@ -103,7 +103,7 @@
                 <div class="control-panel">
                     <div class="input-group mb-3">
                         <button class="btn attach" id="attach"  data-bs-toggle="modal" data-bs-target="#attachModal"><img class="attach-img" src="{{ url_for('static', filename='icon/paperclip.svg') }}"/></button>
-                        <input id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
+                        <input maxlength="256" minlength="1" required id="message" type="text" class="form-control" placeholder="Введите сообщение..." aria-label="Default" aria-describedby="inputGroup-sizing-default">
                         <button class="btn send-msg" id="send_msg"><img class="send-img" src="{{ url_for('static', filename='icon/send.svg') }}"/></button>
                         <img class="scroll-down" id="button_scroll_down" width="40" src="{{ url_for('static', filename='icon/chat-down.svg') }}" alt="Пролистать чат вниз"/>
                     </div>

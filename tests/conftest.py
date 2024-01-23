@@ -1,5 +1,4 @@
 import pytest
-from flask_login import FlaskLoginClient
 
 from app import create_app, db as database
 from tests.config import TestConfig
@@ -36,6 +35,7 @@ def db_session(db, app):
     Return sqlalchemy session.
     """
     for table in reversed(database.metadata.sorted_tables):
+        print(table)
         database.session.execute(table.delete())
     yield database.session
     database.session.rollback()

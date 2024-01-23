@@ -77,9 +77,10 @@ class Attachment(db.Model):
         return Attachment(type=attachment_dict.get('type'), link=attachment_dict.get('link'),
                           message_id=attachment_dict.get('message_id'))
 
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(), nullable=True, index=True)
+    text = db.Column(db.String(256), nullable=True, index=True)
     date = db.Column(db.DateTime, default=datetime.utcnow, comment='last seen user in online')
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'),
                         nullable=True)
@@ -104,9 +105,10 @@ class Message(db.Model):
         return Message(text=message_dict.get('text'), room_id=message_dict.get('room_id'),
                        user_id=message_dict.get('user_id'), receiver=message_dict.get('receiver_id'))
 
+
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    name = db.Column(db.String(18), nullable=False, unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
     messages = db.relationship('Message', backref='room', lazy='dynamic', order_by="Message.date.desc()")
@@ -120,4 +122,3 @@ class Room(db.Model):
     @staticmethod
     def is_exists(room_id):
         return Room.query.filter_by(id=room_id).first()
-

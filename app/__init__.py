@@ -1,29 +1,30 @@
 import flask_socketio
-from flask import Flask
-from flask_admin import Admin
+from flask import Flask, redirect, url_for
 from flask_caching import Cache
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
-
+from flask_admin import Admin, AdminIndexView, expose
 from config import Config
 
-convention = {
-    "ix": 'ix_%(column_0_label)s',
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s"
-}
-
 migrate = Migrate()
-db = SQLAlchemy(metadata=MetaData(naming_convention=convention))
+db = SQLAlchemy()
 socketio = flask_socketio.SocketIO(manage_session=False)
 login_manager = LoginManager()
 cache = Cache()
 moment = Moment()
+
+
+class FlaskAdminIndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if not current_user.is_authenticated:
+            return current_user.is_authenticated
+        return super(FlaskAdminIndexView, self).index()
+
+
+admin_app = Admin(index_view=FlaskAdminIndexView(), template_mode='bootstrap4')
 
 
 def create_app(config_class=Config):
@@ -36,6 +37,7 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     moment.init_app(app)
+    admin_app.init_app(app)
     with app.app_context():
         from . import cli
     from app.chat import bp as chat_bp
@@ -48,4 +50,5 @@ def create_app(config_class=Config):
     app.register_blueprint(chat_socket)
     return app
 
-from app import models, validation
+
+from app import models, validation, admin

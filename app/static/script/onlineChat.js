@@ -25,7 +25,7 @@ class OnlineChatController {
     #usersSet = new Set()
     getOnlineUsers() {
         this.#view.showLoader()
-        return fetch('get-online', {
+        return fetch('users/online', {
 
         }).then(response => {
             if(!response.ok) {
