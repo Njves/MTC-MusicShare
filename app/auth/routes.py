@@ -62,8 +62,6 @@ def register() -> str | Response:
 
 @login_manager.unauthorized_handler
 def unauthorized() -> Response:
-    if request.blueprint == 'chat':
-        abort(HTTPStatus.UNAUTHORIZED)
     return redirect(login_manager.login_view)
 
 
