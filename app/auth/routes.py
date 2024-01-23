@@ -62,7 +62,7 @@ def register() -> str | Response:
 
 @login_manager.unauthorized_handler
 def unauthorized() -> Response:
-    return redirect(login_manager.login_view)
+    return redirect(url_for(login_manager.login_view))
 
 
 @bp.route("/logout", methods=['GET'])
