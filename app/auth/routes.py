@@ -28,7 +28,7 @@ def login() -> str | Response:
                 db.session.commit()
             login_user(user, remember=True)
             next_arg = flask.request.args.get('next')
-            return redirect(next_arg or url_for('chat.index'))
+            return user.to_dict(), 200
         response = flask.make_response({'error': 'Пароль неверный'}, 401)
         return response
     return render_template('chat/enter.html')
@@ -55,8 +55,7 @@ def register() -> str | Response:
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
-        next_arg = flask.request.args.get('next')
-        return redirect(next_arg or url_for('chat.index'))
+        return user.to_dict(), 201
     return render_template('chat/register.html')
 
 

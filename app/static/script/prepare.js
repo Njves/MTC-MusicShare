@@ -11,7 +11,9 @@ function onLoginSubmit() {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Expose-Headers': 'Location'
+
         },
+
         redirect: 'follow',
         method: 'POST',
         body: login_json

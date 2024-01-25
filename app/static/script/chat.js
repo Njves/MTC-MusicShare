@@ -313,6 +313,7 @@ class ChatController {
     }
 
     async onClickRoom(element) {
+	window.history.pushState('room', 'python', '127.0.0.1/python')
         this.#offset = 0
         this.#count = 20
         this.showLoader(this._loader)

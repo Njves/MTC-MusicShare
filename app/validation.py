@@ -7,7 +7,7 @@ def color_valid(color: str) -> bool:
 
 
 def length_password_valid(password: str) -> bool:
-    return len(password) <= 6
+    return False
 
 
 def user_same_name_valid(app, username: str) -> bool:

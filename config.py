@@ -22,6 +22,7 @@ class Config(object):
     SQLALCHEMY_ECHO = True
     MESSAGE_PART = 10
     MAX_CONTENT_LENGTH = 16 * 10 ** 6
+    CORS_HEADERS = 'Content-Type'
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 10,
         'pool_recycle': 60,

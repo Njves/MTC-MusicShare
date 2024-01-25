@@ -7,7 +7,7 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin, AdminIndexView, expose
 from config import Config
-
+from flask_cors import CORS
 migrate = Migrate()
 db = SQLAlchemy()
 socketio = flask_socketio.SocketIO(manage_session=False)
@@ -38,6 +38,7 @@ def create_app(config_class=Config):
     login_manager.login_view = 'auth.login'
     moment.init_app(app)
     admin_app.init_app(app)
+    CORS(app)
     with app.app_context():
         from . import cli
     from app.chat import bp as chat_bp
