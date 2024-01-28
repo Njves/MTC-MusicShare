@@ -20,7 +20,14 @@ from app.models import Message, Room, Attachment, User
 
 @bp.before_request
 def before():
-    print(request.files)
+    current_app.logger.debug(request.headers)
+    
+
+@bp.after_request
+def after(response):
+    current_app.logger.debug(response.headers)
+    current_app.logger.debug(response.get_data())
+    return response
 
 @bp.route("/chat", methods=['GET'])
 @login_required
@@ -135,14 +142,20 @@ def get_private_messages(user_id: int, part: int) -> (dict, int):
 
 
 @bp.route("/rooms")
-@login_required
 def get_rooms() -> Response:
     """
     Возвращает текущие комнаты
     :return: Текущие комнаты
     """
-    rooms: List[Room] = [room.to_dict() for room in Room.query.all()]
-    response: Response = jsonify(rooms)
+    rooms: List[Room] = [room for room in Room.query.all()]
+    dicted_rooms = []
+    for room in rooms:
+        if messages := room.messages.all():
+            last_message = messages[0]
+        dict_room = room.to_dict()
+        dict_room['last_message'] = last_message.to_dict() if last_message else []
+        dicted_rooms.append(dict_room)
+    response: Response = jsonify(dicted_rooms)
     # response.headers['Cache-Control'] = 'public,max-age=300'
     return response
 
@@ -203,7 +216,6 @@ def get_notify() -> Response:
 
 
 @bp.route("/room/<int:room_id>", methods=['GET'])
-@login_required
 def get_history_by_room_name(room_id: int) -> (dict, int):
     """
     Возвращает часть историю сообщений в комнате

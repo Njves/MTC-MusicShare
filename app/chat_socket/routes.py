@@ -2,8 +2,7 @@ import functools
 import json
 from datetime import datetime
 from typing import Callable
-
-from flask import request
+from flask import request, current_app
 from flask_login import login_user, current_user
 from flask_socketio import disconnect, emit, leave_room, join_room
 
@@ -22,11 +21,15 @@ def authenticated_only(f: Callable) -> Callable:
 
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
-        user_id = request.args.get('user_id')
-        if user_id is None:
+        token = request.args.get('token')
+        print(token)
+        if token is None:
             disconnect()
         else:
-            login_user(User.query.get(user_id), remember=True)
+            if User.verify_token(token) is None:
+                current_app.logger.debug('Неудалось подтянуть пользователя', token)
+                disconnect()
+            login_user(User.verify_token(token), remember=True)
             return f(*args, **kwargs)
 
     return wrapped

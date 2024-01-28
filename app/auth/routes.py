@@ -1,13 +1,36 @@
 from http import HTTPStatus
 
 import flask
-from flask import render_template, request, redirect, url_for, abort, Response
+from flask import render_template, request, redirect, url_for, current_app, Response
 from flask_login import login_user, logout_user, login_required, current_user
 
 from app import db, login_manager, validation
 from app.auth import bp
 from app.models import User
 
+@bp.after_request
+def after(response):
+    current_app.logger.debug(response.headers)
+    current_app.logger.debug(response.get_data())
+    return response
+
+@login_manager.request_loader
+def load_user_from_request(request):
+    api_key = request.args.get('api_key')
+    if api_key:
+        flask.session['token'] = api_key
+        user = User.verify_token(api_key)
+        if user:
+            return user
+    api_key = request.headers.get('Authorization')
+    if api_key:
+        api_key = api_key.replace('Basic ', '', 1)
+        flask.session['token'] = api_key
+        user = User.verify_token(api_key)
+        if user:
+            return user
+
+    return None
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login() -> str | Response:
@@ -27,8 +50,8 @@ def login() -> str | Response:
                 db.session.add(user)
                 db.session.commit()
             login_user(user, remember=True)
-            next_arg = flask.request.args.get('next')
-            return user.to_dict(), 200
+            flask.session['token'] = user.get_user_token()
+            return {'token': user.get_user_token(), 'user': user.to_dict()}, 200
         response = flask.make_response({'error': 'Пароль неверный'}, 401)
         return response
     return render_template('chat/enter.html')
@@ -52,10 +75,11 @@ def register() -> str | Response:
         if not validation.length_password_valid(reg_password):
             response = flask.make_response({'error': 'Слишком короткий пароль'}, 409)
             return response
+        flask.session['token'] = user.get_user_token()
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
-        return user.to_dict(), 201
+        return {'token': user.get_user_token(), 'user': user.to_dict()}, 201
     return render_template('chat/register.html')
 
 
@@ -72,12 +96,20 @@ def logout() -> Response:
     response.delete_cookie('current_room')
     return response
 
-@bp.route('/access', methods=['GET'])
+@bp.route('/user', methods=['GET'])
 def get_token():
     token = flask.session.get('token')
     if not token:
-        return {'error': 'Token is expired'}, 404
-    return token
+        token = request.args.get('token')
+    current_app.logger.debug('token', token)
+    try:
+        user = User.verify_token(token)
+        current_app.logger.debug('token', user)
+        if not user:
+            return {}, 404
+    except e:
+        return {'error': e}, 401
+    return user.to_dict()
 
 @bp.route('/refresh', methods=['GET'])
 def get_refresh():
