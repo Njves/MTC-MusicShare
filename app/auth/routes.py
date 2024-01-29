@@ -18,21 +18,21 @@ def after(response):
 def load_user_from_request(request):
     api_key = request.args.get('api_key')
     if api_key:
-        flask.session['token'] = api_key
         user = User.verify_token(api_key)
         if user:
             return user
     api_key = request.headers.get('Authorization')
     if api_key:
-        api_key = api_key.replace('Basic ', '', 1)
-        flask.session['token'] = api_key
+        api_key = api_key.replace('Bearer ', '', 1)
+        current_app.logger.debug(api_key)
         user = User.verify_token(api_key)
+        current_app.logger.debug(user)
         if user:
             return user
 
     return None
 
-@bp.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['POST'])
 def login() -> str | Response:
     """
     Auth page
@@ -50,14 +50,14 @@ def login() -> str | Response:
                 db.session.add(user)
                 db.session.commit()
             login_user(user, remember=True)
-            flask.session['token'] = user.get_user_token()
+
             return {'token': user.get_user_token(), 'user': user.to_dict()}, 200
         response = flask.make_response({'error': 'Пароль неверный'}, 401)
         return response
     return render_template('chat/enter.html')
 
 
-@bp.route("/register", methods=['GET', 'POST'])
+@bp.route("/register", methods=['POST'])
 def register() -> str | Response:
     if current_user.is_authenticated:
         return flask.make_response({'message': 'Вы уже вошли в систему'}, 403)
@@ -75,17 +75,12 @@ def register() -> str | Response:
         if not validation.length_password_valid(reg_password):
             response = flask.make_response({'error': 'Слишком короткий пароль'}, 409)
             return response
-        flask.session['token'] = user.get_user_token()
         db.session.add(user)
         db.session.commit()
         login_user(user, remember=True)
         return {'token': user.get_user_token(), 'user': user.to_dict()}, 201
     return render_template('chat/register.html')
 
-
-@login_manager.unauthorized_handler
-def unauthorized() -> Response:
-    return redirect(url_for(login_manager.login_view))
 
 
 @bp.route("/logout", methods=['GET'])
@@ -98,9 +93,7 @@ def logout() -> Response:
 
 @bp.route('/user', methods=['GET'])
 def get_token():
-    token = flask.session.get('token')
-    if not token:
-        token = request.args.get('token')
+    token = request.args.get('token')
     current_app.logger.debug('token', token)
     try:
         user = User.verify_token(token)

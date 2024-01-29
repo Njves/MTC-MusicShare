@@ -4,12 +4,12 @@ import os
 import uuid
 
 from email_validator import validate_email, EmailNotValidError
-from flask import request, render_template, jsonify, url_for, current_app, send_from_directory, Response, redirect
+from flask import request, render_template, abort, jsonify, url_for, current_app, send_from_directory, Response, redirect
 from flask_login import current_user, login_required
+from app import login_manager
 from sqlalchemy.orm import joinedload
 from typing_extensions import List
 from werkzeug.utils import secure_filename
-
 import app.validation as validation
 from app import socketio, db
 from app.chat import bp
@@ -17,6 +17,10 @@ from app.chat_socket.routes import users
 from app.image_converter import compress_image
 from app.models import Message, Room, Attachment, User
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    abort(401)
+    
 
 @bp.before_request
 def before():
@@ -26,19 +30,22 @@ def before():
 @bp.after_request
 def after(response):
     current_app.logger.debug(response.headers)
-    current_app.logger.debug(response.get_data())
+    if 'image' not in response.headers['Content-Type']:
+        current_app.logger.debug(response.get_data())
     return response
 
-@bp.route("/chat", methods=['GET'])
-@login_required
-def index():
+@bp.route("/", methods=['GET'], defaults={'path': ''})
+@bp.route("/<path:path>", methods=['GET'])
+def index(path):
     """
     Возвращает html страницу чата
     :return:
     """
-    if not current_user.is_authenticated:
-        return redirect('auth.login')
     return render_template('chat/index.html')
+
+@bp.route('/img/<path:path>')
+def get_img(path):
+    return send_from_directory('static/icon/img', path)
 
 
 @bp.route('/messages/search')
