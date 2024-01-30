@@ -7,7 +7,7 @@ from flask_login import login_user, current_user
 from flask_socketio import disconnect, emit, leave_room, join_room
 
 from app import socketio, db
-from app.models import User, Message, Room
+from app.models import User, Message, Room, Attachment
 
 users: dict[User, int] = {}
 
@@ -121,9 +121,11 @@ def handle_new_message(message):
     msg = message
     if not isinstance(message, dict):
         msg = json.loads(message)
-    if not msg['text']:
+    if not msg['text'] and not msg['attachments']:
         return
-    message = Message(user=current_user, text=msg['text'], date=datetime.utcnow(), room_id=msg['room_id'])
+    attachments = [Attachment(link=attachment['link'], type=attachment['type']) for attachment in msg['attachments']]
+    current_app.logger.debug('Отправленное сообщение', message)
+    message = Message(user=current_user, text=msg['text'], date=datetime.utcnow(), room_id=msg['room_id'], attachments=attachments)
     db.session.add(message)
     db.session.commit()
     print('new_message', message.to_dict())

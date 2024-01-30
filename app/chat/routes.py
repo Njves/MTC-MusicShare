@@ -56,8 +56,6 @@ def search_messages() -> (dict, int):
     :return:
     """
     query = request.args.get('query')
-    if not query:
-        return {'error': 'query param cannot be empty'}, 400
     room_id = request.args.get('room_id')
     if not room_id:
         return {'error': 'room_id param cannot be empty'}, 400
@@ -233,6 +231,7 @@ def get_history_by_room_name(room_id: int) -> (dict, int):
     count = request.args.get('count') if request.args.get('count') else 30
     offset = request.args.get('offset') if request.args.get('offset') else 0
     room: Room = Room.query.filter_by(id=room_id).first()
+    
     if not room:
         return {'error': 'The room was not found'}, http.HTTPStatus.NOT_FOUND.value
     room_dict = room.to_dict()
@@ -240,6 +239,7 @@ def get_history_by_room_name(room_id: int) -> (dict, int):
     room_dict['messages'] = []
     room_messages = room.messages.options(joinedload(Message.attachments), joinedload(Message.user)).limit(
         count).offset(offset)
+
     for message in room_messages:
         room_dict['messages'].append(message.to_dict())
 
@@ -260,6 +260,7 @@ def get_users_online() -> Response:
 @bp.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
+    print(request.files)
     if 'file' not in request.files:
         return {'error': 'The file is not attached'}, http.HTTPStatus.BAD_REQUEST.value
     files = request.files.getlist('file')
@@ -342,14 +343,12 @@ def edit_message(msg_id: int) -> (dict, int):
 
 
 @bp.route('/content/<path:name>', methods=['GET'])
-@login_required
 def get_content(name) -> Response:
     """
     Возвращает медиа файл
     :param name: название медиа файла
     :return: медиа файл
     """
+    print(name)
     response = send_from_directory(current_app.config['UPLOAD_FOLDER'], name)
-    response.headers['Cache-Control'] = 'public,max-age=300'
-    response.direct_passthrough = False
     return response
