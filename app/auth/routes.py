@@ -29,7 +29,6 @@ def load_user_from_request(request):
         current_app.logger.debug(user)
         if user:
             return user
-
     return None
 
 @bp.route('/login', methods=['POST'])

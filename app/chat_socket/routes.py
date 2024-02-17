@@ -2,14 +2,20 @@ import functools
 import json
 from datetime import datetime
 from typing import Callable
-from flask import request, current_app
-from flask_login import login_user, current_user
+from flask import request, current_app, jsonify
+from flask_login import login_user, current_user, login_required
 from flask_socketio import disconnect, emit, leave_room, join_room
 
 from app import socketio, db
 from app.models import User, Message, Room, Attachment
-
+from app.chat_socket import bp
 users: dict[User, int] = {}
+geo: dict[User, (float, float)] = {}
+
+@bp.route('/users/geo')
+@login_required
+def get_users_geo():
+    return jsonify(geo)
 
 
 def authenticated_only(f: Callable) -> Callable:
@@ -45,6 +51,20 @@ def handle_connect():
     emit('join', current_user.to_dict(), broadcast=True)
 
 
+@socketio.on('push_geo')
+@authenticated_only
+def push_geo(data: dict | str):
+    """
+    Получает на вход lon и lan
+    :param data:
+    :return:
+    """
+    print(data)
+    if isinstance(data, str):
+        data = json.loads(data)
+    geo[current_user._get_current_object().id] = {"lon": float(data.get('lon')), "lat": float(data.get('lan'))}
+
+
 @socketio.on("join")
 @authenticated_only
 def on_join(data: dict | str):
@@ -74,6 +94,7 @@ def on_join(data: dict | str):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
     print(current_user.username, 'leaved to', data['id'], 'room')
     leave_room(room_id)
+
 
 
 @socketio.on("delete")
