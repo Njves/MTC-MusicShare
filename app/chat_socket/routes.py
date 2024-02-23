@@ -19,11 +19,16 @@ rooms = {}
 @login_required
 def get_users_geo(room_id):
     response = {}
-    print(rooms)
+    user2 = User.query.filter_by(username='admin1').first()
+    user1 = User.query.filter_by(username='Egor').first()
+    rooms[1] = [user2, user1]
+    geo[user1] = {'lat': 55, 'lon': 55, 'username': user1.username}
+    geo[user2] = {'lat': 54, 'lon': 51, 'username': user2.username}
     if room_id not in rooms:
-        return {}, 404
+        return {}, 40
+    response['users'] = []
     for user in rooms[room_id]:
-        response[user.username] = geo[user]
+        response['users'].append(geo[user])
     return jsonify(response)
 
 
@@ -99,7 +104,7 @@ def push_geo(data: dict | str):
     print(data)
     if isinstance(data, str):
         data = json.loads(data)
-    geo[current_user._get_current_object()] = {'lat': data.get('lan'), 'lon': data.get('lon')}
+    geo[current_user._get_current_object()] = {'lat': data.get('lan'), 'lon': data.get('lon'), 'username': current_user.usename}
 
 
 @socketio.on("join")
