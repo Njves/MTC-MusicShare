@@ -9,13 +9,50 @@ from flask_socketio import disconnect, emit, leave_room, join_room
 from app import socketio, db
 from app.models import User, Message, Room, Attachment
 from app.chat_socket import bp
-users: dict[User, int] = {}
-geo: dict[User, (float, float)] = {}
 
-@bp.route('/users/geo')
+users: dict[User, int] = {}
+geo: dict[User, dict] = {}
+rooms = {}
+
+
+@bp.route('/room/<int:room_id>/geo')
 @login_required
-def get_users_geo():
-    return jsonify(geo)
+def get_users_geo(room_id):
+    response = {}
+    print(rooms)
+    if room_id not in rooms:
+        return {}, 404
+    for user in rooms[room_id]:
+        response[user.username] = geo[user]
+    return jsonify(response)
+
+
+@bp.route("/user/geo", methods=['POST'])
+@login_required
+def push_geo() -> (dict, int):
+    """
+    Return
+    """
+    geo[current_user._get_current_object()] = {'lat': request.json.get('lat'), 'lon': request.json.get('lon')}
+    return current_user.to_dict()
+
+
+@bp.route("/user/room", methods=['POST'])
+@login_required
+def put_user_room() -> (dict, int):
+    """
+    Return
+    """
+    save_room(request.json.get('room_id'))
+    return current_user.to_dict()
+
+
+def save_room(room_id):
+    print(room_id)
+    if room_id not in rooms:
+        rooms[room_id] = [current_user._get_current_object()]
+    else:
+        rooms[room_id].append(current_user._get_current_object())
 
 
 def authenticated_only(f: Callable) -> Callable:
@@ -62,7 +99,7 @@ def push_geo(data: dict | str):
     print(data)
     if isinstance(data, str):
         data = json.loads(data)
-    geo[current_user._get_current_object().id] = {"lon": float(data.get('lon')), "lat": float(data.get('lan'))}
+    geo[current_user._get_current_object()] = {'lat': data.get('lan'), 'lon': data.get('lon')}
 
 
 @socketio.on("join")
@@ -79,6 +116,7 @@ def on_join(data: dict | str):
         socketio.emit('exception', {'error': 'The room ID is missing'})
     if not Room.is_exists(room_id):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
+    save_room(room_id)
     join_room(room_id)
 
 
@@ -93,8 +131,11 @@ def on_join(data: dict | str):
     if not Room.is_exists(room_id):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
     print(current_user.username, 'leaved to', data['id'], 'room')
+    del geo[current_user._get_current_object()]
+    for key, value in rooms.items():
+        if value == current_user:
+            del rooms[key]
     leave_room(room_id)
-
 
 
 @socketio.on("delete")
@@ -142,16 +183,24 @@ def handle_new_message(message):
     msg = message
     if not isinstance(message, dict):
         msg = json.loads(message)
+
     if not msg['text'] and not msg['attachments']:
         return
+    if not msg['room_id']:
+        return
+
     attachments = [Attachment(link=attachment['link'], type=attachment['type']) for attachment in msg['attachments']]
     current_app.logger.debug('Отправленное сообщение', message)
-    message = Message(user=current_user, text=msg['text'], date=datetime.utcnow(), room_id=msg['room_id'], attachments=attachments)
+    message = Message(user=current_user, text=msg['text'], date=datetime.utcnow(), room_id=msg['room_id'],
+                      attachments=attachments)
     db.session.add(message)
     db.session.commit()
     print('new_message', message.to_dict())
     emit("chat", message.to_dict(), to=message.room_id)
     if not message.is_private():
+        room = Room.query.filter_by(id=msg['room_id']).first()
+        for sub in room.subscribers:
+            pass
         emit("notify", message.to_dict(), broadcast=True)
 
 

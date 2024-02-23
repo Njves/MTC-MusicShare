@@ -4,6 +4,7 @@ from time import time
 import jwt
 from flask import current_app
 from flask_login import UserMixin
+from sqlalchemy import UniqueConstraint
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db, login_manager
@@ -12,6 +13,14 @@ from app import db, login_manager
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
+
+subscribers = db.Table(
+    'subscribers',
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('room_id', db.Integer(), db.ForeignKey('room.id'),),
+    db.UniqueConstraint('user_id', 'room_id')
+)
 
 
 class User(db.Model, UserMixin):
@@ -112,7 +121,7 @@ class Room(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                          nullable=True)
     messages = db.relationship('Message', backref='room', lazy='dynamic', order_by="Message.date.desc()")
-
+    subscribers = db.relationship('User', secondary=subscribers)
     def __repr__(self):
         return self.name
 

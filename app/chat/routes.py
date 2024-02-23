@@ -2,9 +2,12 @@ import datetime
 import http
 import os
 import uuid
+import requests
 
+import flask
 from email_validator import validate_email, EmailNotValidError
-from flask import request, render_template, abort, jsonify, url_for, current_app, send_from_directory, Response, redirect
+from flask import request, render_template, abort, jsonify, url_for, current_app, send_from_directory, Response, \
+    redirect
 from flask_login import current_user, login_required
 from app import login_manager
 from sqlalchemy.orm import joinedload
@@ -17,15 +20,18 @@ from app.chat_socket.routes import users
 from app.image_converter import compress_image
 from app.models import Message, Room, Attachment, User
 
+secret_key_firebase = 'BOSEtNKd-Y1IaaH5ghnrOcqK6D8hoFG-R0GJtxwhQK11cCBxQKm6A685S2Sl6AE8wILvqSKIsKYp53kUnQQ68Z0'
+
+
 @login_manager.unauthorized_handler
 def unauthorized():
     abort(401)
-    
+
 
 @bp.before_request
 def before():
     current_app.logger.debug(request.headers)
-    
+
 
 @bp.after_request
 def after(response):
@@ -33,6 +39,7 @@ def after(response):
     if 'image' not in response.headers['Content-Type']:
         current_app.logger.debug(response.get_data())
     return response
+
 
 @bp.route("/", methods=['GET'], defaults={'path': ''})
 @bp.route("/<path:path>", methods=['GET'])
@@ -42,6 +49,7 @@ def index(path):
     :return:
     """
     return render_template('chat/index.html')
+
 
 @bp.route('/img/<path:path>')
 def get_img(path):
@@ -68,15 +76,18 @@ def search_messages() -> (dict, int):
 
 @bp.route("/user/current", methods=['GET'])
 @login_required
-def get_current_user() -> (dict, int):
+def get_geo_by_room() -> (dict, int):
     """
-    Return username from current server session
+    Return users geo by room
     :return:
     """
     if not current_user:
         return {'error': 'The user does not exist'}, http.HTTPStatus.NOT_FOUND.value
 
     return current_user.to_dict()
+
+
+
 
 
 @bp.route('/user/<int:user_id>', methods=['PUT'])
@@ -194,7 +205,7 @@ def create_room() -> (dict, int):
     db.session.add(new_room)
     db.session.commit()
     socketio.emit('new_room', new_room.to_dict())
-    return new_room.to_dict(), 201
+    return new_room.tox_dict(), 201
 
 
 @bp.route('/room/<int:room_id>', methods=['DELETE'])
@@ -231,7 +242,7 @@ def get_history_by_room_name(room_id: int) -> (dict, int):
     count = request.args.get('count') if request.args.get('count') else 30
     offset = request.args.get('offset') if request.args.get('offset') else 0
     room: Room = Room.query.filter_by(id=room_id).first()
-    
+
     if not room:
         return {'error': 'The room was not found'}, http.HTTPStatus.NOT_FOUND.value
     room_dict = room.to_dict()
@@ -349,6 +360,39 @@ def get_content(name) -> Response:
     :param name: название медиа файла
     :return: медиа файл
     """
-    print(name)
     response = send_from_directory(current_app.config['UPLOAD_FOLDER'], name)
     return response
+
+
+@bp.route('/room/<int:room_id>/subscribe', methods=['POST'])
+@login_required
+def subscribe(room_id):
+    """
+    Осуществляет подписку на комнату
+    """
+    json = request.json
+    user_id = json.get('user_id')
+    room = Room.query.filter_by(id=room_id).first()
+    if not room:
+        return flask.abort(404)
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return flask.abort(404)
+    room.subscribers.append(user)
+    db.session.add(room)
+    db.session.commit()
+    return {}, 200
+
+
+@bp.route('/notification/<string:token>')
+def send_notify(token):
+    notification = {
+        'notification': {
+            'title': 'test',
+            'body': 'test'
+        },
+        'to': token
+    }
+    res = requests.post('https://fcm.googleapis.com/fcm/send', json=notification,
+                        headers={'Authorization': 'key=' + secret_key_firebase, 'Content-Type': 'application/json'})
+    print(res)
