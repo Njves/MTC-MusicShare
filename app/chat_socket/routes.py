@@ -2,6 +2,8 @@ import functools
 import json
 from datetime import datetime
 from typing import Callable
+
+import flask
 from flask import request, current_app, jsonify
 from flask_login import login_user, current_user, login_required
 from flask_socketio import disconnect, emit, leave_room, join_room
@@ -19,14 +21,11 @@ rooms = {}
 @login_required
 def get_users_geo(room_id):
     response = {}
-    user1 = User.query.filter_by(username='Egor').first()
-    rooms[1] = [user1]
-    geo[user1] = {'lat': 55, 'lon': 55, 'username': user1.username}
     if room_id not in rooms:
-        return {}, 40
+        return {}, 404
     response['users'] = []
-    print(geo.values())
-    response['users'] = list(geo.values())
+    room_users = {user for user in rooms[room_id]}
+    response['users'] = [geo[user] for user in room_users if user in room_users]
     return jsonify(response)
 
 
@@ -37,21 +36,22 @@ def push_geo() -> (dict, int):
     Return
     """
     geo[current_user._get_current_object()] = {'lat': request.json.get('lat'), 'lon': request.json.get('lon')}
-    return current_user.to_dict()
+    socketio.emit('on_geo', geo[current_user._get_current_object()])
+    return {'lat': request.json.get('lat'), 'lon': request.json.get('lon'), 'user': current_user.to_dict()}
 
 
-@bp.route("/user/room", methods=['POST'])
+@bp.route("/user/room/<int:room_id>/join", methods=['POST'])
 @login_required
-def put_user_room() -> (dict, int):
+def put_user_room(room_id) -> (dict, int):
     """
     Return
     """
-    save_room(request.json.get('room_id'))
-    return current_user.to_dict()
+    put_user_to_room(room_id)
+    return {}, 201
 
 
-def save_room(room_id):
-    print(room_id)
+def put_user_to_room(room_id):
+    current_app.logger.info(f'Put user {current_user} to {room_id}')
     if room_id not in rooms:
         rooms[room_id] = [current_user._get_current_object()]
     else:
@@ -87,6 +87,7 @@ def handle_connect():
     """
     Connect событие для сокета
     """
+    current_app.logger.info('sid connect %s', request.sid)
     users[current_user._get_current_object()] = request.sid
     emit('join', current_user.to_dict(), broadcast=True)
 
@@ -102,7 +103,8 @@ def push_geo(data: dict | str):
     print('push_geo', data)
     if isinstance(data, str):
         data = json.loads(data)
-    geo[current_user._get_current_object()] = {'lat': data.get('lat'), 'lon': data.get('lon'), 'username': current_user.username}
+    geo[current_user._get_current_object()] = {'lat': data.get('lat'), 'lon': data.get('lon'), 'user': current_user}
+    socketio.emit('on_geo', geo[current_user._get_current_object()])
 
 
 @socketio.on("join")
@@ -119,8 +121,9 @@ def on_join(data: dict | str):
         socketio.emit('exception', {'error': 'The room ID is missing'})
     if not Room.is_exists(room_id):
         socketio.emit('exception', {'error': 'There is no room with this ID'})
-    save_room(room_id)
+    put_user_to_room(room_id)
     join_room(room_id)
+    current_app.logger.info('sid room %s',request.sid)
 
 
 @socketio.on("leave")

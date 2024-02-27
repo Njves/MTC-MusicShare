@@ -32,7 +32,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     migrate.init_app(app, db, render_as_batch=True)
     db.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(app, engineio_logger=True)
     cache.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

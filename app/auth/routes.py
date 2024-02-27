@@ -93,10 +93,8 @@ def logout() -> Response:
 @bp.route('/user', methods=['GET'])
 def get_token():
     token = request.args.get('token')
-    current_app.logger.debug('token', token)
     try:
         user = User.verify_token(token)
-        current_app.logger.debug('token', user)
         if not user:
             return {}, 404
     except e:

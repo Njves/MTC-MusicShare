@@ -20,7 +20,7 @@ from app.chat_socket.routes import users
 from app.image_converter import compress_image
 from app.models import Message, Room, Attachment, User
 
-secret_key_firebase = 'BOSEtNKd-Y1IaaH5ghnrOcqK6D8hoFG-R0GJtxwhQK11cCBxQKm6A685S2Sl6AE8wILvqSKIsKYp53kUnQQ68Z0'
+secret_key_firebase = 'AAAA0CBk6uY:APA91bEA95woCXx93EyHCNEqJwarFnwLzuY7fTZQUDMEEQApRzZtwLrAqMTBhjCNYWnjdOZz93K92q88DIaCc8YCngFt7w8ywNdFVEzxwj2ZLtkZ6hd5ZdO8fBsM9jJfnDP--JR7OTmf'
 
 
 @login_manager.unauthorized_handler
@@ -85,9 +85,6 @@ def get_geo_by_room() -> (dict, int):
         return {'error': 'The user does not exist'}, http.HTTPStatus.NOT_FOUND.value
 
     return current_user.to_dict()
-
-
-
 
 
 @bp.route('/user/<int:user_id>', methods=['PUT'])
@@ -387,12 +384,18 @@ def subscribe(room_id):
 @bp.route('/notification/<string:token>')
 def send_notify(token):
     notification = {
-        'notification': {
+        'notification':  {
             'title': 'test',
             'body': 'test'
+
         },
         'to': token
     }
     res = requests.post('https://fcm.googleapis.com/fcm/send', json=notification,
                         headers={'Authorization': 'key=' + secret_key_firebase, 'Content-Type': 'application/json'})
-    print(res)
+    print(res.text)
+    return {}, 200
+
+@bp.route('/doc')
+def doc():
+    return render_template('doc/index.html')
