@@ -104,7 +104,7 @@ def push_geo(data: dict | str):
     if isinstance(data, str):
         data = json.loads(data)
     geo[current_user._get_current_object()] = {'lat': data.get('lat'), 'lon': data.get('lon'), 'user': current_user}
-    socketio.emit('on_geo', geo[current_user._get_current_object()])
+    socketio.emit('geo', geo[current_user._get_current_object()])
 
 
 @socketio.on("join")

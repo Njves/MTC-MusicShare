@@ -1,0 +1,992 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Chat API</title>
+    <style type="text/css">
+      body {
+      	font-family: Trebuchet MS, sans-serif;
+      	font-size: 15px;
+      	color: #444;
+      	margin-right: 24px;
+      }
+      
+      h1	{
+      	font-size: 25px;
+      }
+      h2	{
+      	font-size: 20px;
+      }
+      h3	{
+      	font-size: 16px;
+      	font-weight: bold;
+      }
+      hr	{
+      	height: 1px;
+      	border: 0;
+      	color: #ddd;
+      	background-color: #ddd;
+      }
+      
+      .app-desc {
+        clear: both;
+        margin-left: 20px;
+      }
+      .param-name {
+        width: 100%;
+      }
+      .license-info {
+        margin-left: 20px;
+      }
+      
+      .license-url {
+        margin-left: 20px;
+      }
+      
+      .model {
+        margin: 0 0 0px 20px;
+      }
+      
+      .method {
+        margin-left: 20px;
+      }
+      
+      .method-notes	{
+      	margin: 10px 0 20px 0;
+      	font-size: 90%;
+      	color: #555;
+      }
+      
+      pre {
+        padding: 10px;
+        margin-bottom: 2px;
+      }
+      
+      .http-method {
+       text-transform: uppercase;
+      }
+      
+      pre.get {
+        background-color: #0f6ab4;
+      }
+      
+      pre.post {
+        background-color: #10a54a;
+      }
+      
+      pre.put {
+        background-color: #c5862b;
+      }
+      
+      pre.delete {
+        background-color: #a41e22;
+      }
+      
+      .huge	{
+      	color: #fff;
+      }
+      
+      pre.example {
+        background-color: #f3f3f3;
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+      
+      code {
+        white-space: pre;
+      }
+      
+      .nickname {
+        font-weight: bold;
+      }
+      
+      .method-path {
+        font-size: 1.5em;
+        background-color: #0f6ab4;
+      }
+      
+      .up {
+        float:right;
+      }
+      
+      .parameter {
+        width: 500px;
+      }
+      
+      .param {
+        width: 500px;
+        padding: 10px 0 0 20px;
+        font-weight: bold;
+      }
+      
+      .param-desc {
+        width: 700px;
+        padding: 0 0 0 20px;
+        color: #777;
+      }
+      
+      .param-type {
+        font-style: italic;
+      }
+      
+      .param-enum-header {
+      width: 700px;
+      padding: 0 0 0 60px;
+      color: #777;
+      font-weight: bold;
+      }
+      
+      .param-enum {
+      width: 700px;
+      padding: 0 0 0 80px;
+      color: #777;
+      font-style: italic;
+      }
+      
+      .field-label {
+        padding: 0;
+        margin: 0;
+        clear: both;
+      }
+      
+      .field-items	{
+      	padding: 0 0 15px 0;
+      	margin-bottom: 15px;
+      }
+      
+      .return-type {
+        clear: both;
+        padding-bottom: 10px;
+      }
+      
+      .param-header {
+        font-weight: bold;
+      }
+      
+      .method-tags {
+        text-align: right;
+      }
+      
+      .method-tag {
+        background: none repeat scroll 0% 0% #24A600;
+        border-radius: 3px;
+        padding: 2px 10px;
+        margin: 2px;
+        color: #FFF;
+        display: inline-block;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+  <h1>Chat API</h1>
+    <div class="app-desc">Чат OpenAPI спецификация</div>
+    <div class="app-desc">More information: <a href="https://helloreverb.com">https://helloreverb.com</a></div>
+    <div class="app-desc">Contact Info: <a href="mrpostik@gmail.com">mrpostik@gmail.com</a></div>
+    <div class="app-desc">Version: 1.0.0</div>
+    <div class="app-desc">BasePath:/Lugovkin-INC/ChatAPI/1.0.0</div>
+    <div class="license-info">MIT</div>
+    <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
+  <h2>Access</h2>
+
+  <h2><a name="__Methods">Methods</a></h2>
+  [ Jump to <a href="#__Models">Models</a> ]
+
+  <h3>Table of Contents </h3>
+  <div class="method-summary"></div>
+  <h4><a href="#File">File</a></h4>
+  <ul>
+  <li><a href="#getContent"><code><span class="http-method">get</span> /content/{path}</code></a></li>
+  <li><a href="#uploadFile"><code><span class="http-method">post</span> /upload</code></a></li>
+  </ul>
+  <h4><a href="#Message">Message</a></h4>
+  <ul>
+  <li><a href="#attach"><code><span class="http-method">post</span> /message/attach</code></a></li>
+  <li><a href="#editMessage"><code><span class="http-method">put</span> /message/{msg_id}</code></a></li>
+  <li><a href="#removeMessage"><code><span class="http-method">get</span> /message/{msg_id}</code></a></li>
+  <li><a href="#searchMessages"><code><span class="http-method">get</span> /messages/search</code></a></li>
+  </ul>
+  <h4><a href="#Room">Room</a></h4>
+  <ul>
+  <li><a href="#createRoom"><code><span class="http-method">post</span> /room</code></a></li>
+  <li><a href="#getHistoryByRoomName"><code><span class="http-method">get</span> /room/{room_id}</code></a></li>
+  <li><a href="#getRooms"><code><span class="http-method">get</span> /rooms</code></a></li>
+  <li><a href="#removeRoom"><code><span class="http-method">delete</span> /room/{room_id}</code></a></li>
+  <li><a href="#subscribe"><code><span class="http-method">post</span> /room/{room_id}/subscribe</code></a></li>
+  </ul>
+
+  <h1><a name="File">File</a></h1>
+  <div class="method"><a name="getContent"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /content/{path}</code></pre></div>
+    <div class="method-summary">Метод получения файлов (<span class="nickname">getContent</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">path (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Путь к файлу </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Error">Error</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "code" : 500,
+  "error" : "Service is not avaiable"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Бинарный файл
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Файл не найден
+        <a href="#Error">Error</a>
+    <h4 class="field-label">default</h4>
+    Нестандартный ответ
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="uploadFile"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /upload</code></pre></div>
+    <div class="method-summary">Метод загрузки файлов (<span class="nickname">uploadFile</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>multipart/form-data</code></li>
+    </ul>
+
+
+
+
+    <h3 class="field-label">Form parameters</h3>
+    <div class="field-items">
+      <div class="param">File (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Form Parameter</span> &mdash;  format: binary</div>    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Attachment">Attachment</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "link" : "content/test.jpg"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Ответ с кодом успешной загрузки
+        <a href="#Attachment">Attachment</a>
+    <h4 class="field-label">404</h4>
+    Файл не прикреплен
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Message">Message</a></h1>
+  <div class="method"><a name="attach"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /message/attach</code></pre></div>
+    <div class="method-summary">Метод добавления к сообщению прикреплений (<span class="nickname">attach</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#Attachment">Attachment</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; Список прикреплений </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Message">Message</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "date" : "08-20-2024",
+  "room_id" : 1,
+  "attachments" : {
+    "link" : "content/test.jpg"
+  },
+  "receiver" : 10,
+  "id" : 1,
+  "text" : "Hello world",
+  "user" : {
+    "color" : "#F0F0F0",
+    "last_seen" : "11-11-2001",
+    "email" : "GoblinSlayer@gmail.com",
+    "username" : "Yagami Light"
+  }
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Ответ с кодом успешного добавления
+        <a href="#Message">Message</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="editMessage"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /message/{msg_id}</code></pre></div>
+    <div class="method-summary">Метод редактирования сообщения (<span class="nickname">editMessage</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">msg_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Идентификатор сообщения </div>    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#Message">Message</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Message">Message</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "date" : "08-20-2024",
+  "room_id" : 1,
+  "attachments" : {
+    "link" : "content/test.jpg"
+  },
+  "receiver" : 10,
+  "id" : 1,
+  "text" : "Hello world",
+  "user" : {
+    "color" : "#F0F0F0",
+    "last_seen" : "11-11-2001",
+    "email" : "GoblinSlayer@gmail.com",
+    "username" : "Yagami Light"
+  }
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Ответ с кодом успешного редактирования
+        <a href="#Message">Message</a>
+    <h4 class="field-label">403</h4>
+    Пользователь не является отправителем сообщения
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Сообщение не найдено
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="removeMessage"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /message/{msg_id}</code></pre></div>
+    <div class="method-summary">Метод удаления сообщения (<span class="nickname">removeMessage</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">msg_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Идентификатор сообщения </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Ответ с кодом успешного удаления
+        <a href="#"></a>
+    <h4 class="field-label">403</h4>
+    Пользователь не является отправителем сообщения
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Сообщение не найдено
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="searchMessages"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /messages/search</code></pre></div>
+    <div class="method-summary">Метод поиска сообщений (<span class="nickname">searchMessages</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">query (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Текст запроа </div>      <div class="param">room_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Комната для поиска </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Message">Message</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "date" : "08-20-2024",
+  "room_id" : 1,
+  "attachments" : {
+    "link" : "content/test.jpg"
+  },
+  "receiver" : 10,
+  "id" : 1,
+  "text" : "Hello world",
+  "user" : {
+    "color" : "#F0F0F0",
+    "last_seen" : "11-11-2001",
+    "email" : "GoblinSlayer@gmail.com",
+    "username" : "Yagami Light"
+  }
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Успешный ответ со списком сообщений
+        <a href="#Message">Message</a>
+    <h4 class="field-label">default</h4>
+    Все нестандартное
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Room">Room</a></h1>
+  <div class="method"><a name="createRoom"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /room</code></pre></div>
+    <div class="method-summary">Метод создания комнаты (<span class="nickname">createRoom</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#Room">Room</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Room">Room</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "owner_id" : 10,
+  "name" : "Secret Room",
+  "id" : 1
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Успешный ответ с новой комнатой
+        <a href="#Room">Room</a>
+    <h4 class="field-label">400</h4>
+    Невалидные параметры комнаты
+        <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Отказ из-за создания четвертой комнаты
+        <a href="#Error">Error</a>
+    <h4 class="field-label">default</h4>
+    Все нестандартное
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="getHistoryByRoomName"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /room/{room_id}</code></pre></div>
+    <div class="method-summary">Метод получения комнаты (<span class="nickname">getHistoryByRoomName</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">room_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Идентификатор комнаты </div>    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">count (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Количество сообщений </div>      <div class="param">offset (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Смещение относительного общего количество сообщений </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#RoomWithMessages">RoomWithMessages</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "owner_id" : 0,
+  "name" : "Secret Room",
+  "messages" : [ {
+    "date" : "08-20-2024",
+    "room_id" : 1,
+    "attachments" : {
+      "link" : "content/test.jpg"
+    },
+    "receiver" : 10,
+    "id" : 1,
+    "text" : "Hello world",
+    "user" : {
+      "color" : "#F0F0F0",
+      "last_seen" : "11-11-2001",
+      "email" : "GoblinSlayer@gmail.com",
+      "username" : "Yagami Light"
+    }
+  }, {
+    "date" : "08-20-2024",
+    "room_id" : 1,
+    "attachments" : {
+      "link" : "content/test.jpg"
+    },
+    "receiver" : 10,
+    "id" : 1,
+    "text" : "Hello world",
+    "user" : {
+      "color" : "#F0F0F0",
+      "last_seen" : "11-11-2001",
+      "email" : "GoblinSlayer@gmail.com",
+      "username" : "Yagami Light"
+    }
+  } ],
+  "id" : 1
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Успешный ответ со списком сообщений
+        <a href="#RoomWithMessages">RoomWithMessages</a>
+    <h4 class="field-label">400</h4>
+    Комната не найдена
+        <a href="#Error">Error</a>
+    <h4 class="field-label">default</h4>
+    Все нестандартное
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="getRooms"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /rooms</code></pre></div>
+    <div class="method-summary">Метод получения всех комнат (<span class="nickname">getRooms</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#RoomWithLastMessage">RoomWithLastMessage</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "owner_id" : 1,
+  "last_message" : {
+    "date" : "08-20-2024",
+    "room_id" : 1,
+    "attachments" : {
+      "link" : "content/test.jpg"
+    },
+    "receiver" : 10,
+    "id" : 1,
+    "text" : "Hello world",
+    "user" : {
+      "color" : "#F0F0F0",
+      "last_seen" : "11-11-2001",
+      "email" : "GoblinSlayer@gmail.com",
+      "username" : "Yagami Light"
+    }
+  },
+  "id" : 1
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Успешный ответ со списком комнат
+        <a href="#RoomWithLastMessage">RoomWithLastMessage</a>
+    <h4 class="field-label">default</h4>
+    Все нестандартное
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="removeRoom"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /room/{room_id}</code></pre></div>
+    <div class="method-summary">Метод удаления комнаты (<span class="nickname">removeRoom</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">room_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Идентификатор комнаты </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Ответ с кодом успешного удаления
+        <a href="#"></a>
+    <h4 class="field-label">403</h4>
+    Пользователь не является создателем комнаты
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Комната не найдена
+        <a href="#Error">Error</a>
+    <h4 class="field-label">default</h4>
+    Нестандартный ответ
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="subscribe"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /room/{room_id}/subscribe</code></pre></div>
+    <div class="method-summary">Подписаться на уведомления комнаты (<span class="nickname">subscribe</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">room_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Идентификатор комнаты </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Message">Message</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "date" : "08-20-2024",
+  "room_id" : 1,
+  "attachments" : {
+    "link" : "content/test.jpg"
+  },
+  "receiver" : 10,
+  "id" : 1,
+  "text" : "Hello world",
+  "user" : {
+    "color" : "#F0F0F0",
+    "last_seen" : "11-11-2001",
+    "email" : "GoblinSlayer@gmail.com",
+    "username" : "Yagami Light"
+  }
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Ответ с кодом успешного редактирования
+        <a href="#Message">Message</a>
+  </div> <!-- method -->
+  <hr/>
+
+  <h2><a name="__Models">Models</a></h2>
+  [ Jump to <a href="#__Methods">Methods</a> ]
+
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#Attachment"><code>Attachment</code></a></li>
+    <li><a href="#Error"><code>Error</code></a></li>
+    <li><a href="#Message"><code>Message</code></a></li>
+    <li><a href="#Room"><code>Room</code></a></li>
+    <li><a href="#RoomWithLastMessage"><code>RoomWithLastMessage</code></a></li>
+    <li><a href="#RoomWithMessages"><code>RoomWithMessages</code></a></li>
+    <li><a href="#User"><code>User</code></a></li>
+    <li><a href="#upload_body"><code>upload_body</code></a></li>
+  </ol>
+
+  <div class="model">
+    <h3><a name="Attachment"><code>Attachment</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: content/test.jpg</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Error"><code>Error</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">error (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Service is not avaiable</span></div>
+<div class="param">code (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 500</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Message"><code>Message</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">text </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Hello world</span></div>
+<div class="param">receiver </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 10</span></div>
+<div class="param">date </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 08-20-2024</span></div>
+<div class="param">attachments </div><div class="param-desc"><span class="param-type"><a href="#Attachment">Attachment</a></span>  </div>
+<div class="param">user </div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+<div class="param">room_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Room"><code>Room</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Secret Room</span></div>
+<div class="param">owner_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 10</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RoomWithLastMessage"><code>RoomWithLastMessage</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">owner_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">last_message </div><div class="param-desc"><span class="param-type"><a href="#Message">Message</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RoomWithMessages"><code>RoomWithMessages</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Secret Room</span></div>
+<div class="param">owner_id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+<div class="param">messages </div><div class="param-desc"><span class="param-type"><a href="#Message">array[Message]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="User"><code>User</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">username </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Yagami Light</span></div>
+<div class="param">email </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: GoblinSlayer@gmail.com</span></div>
+<div class="param">color </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: #F0F0F0</span></div>
+<div class="param">last_seen </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 11-11-2001</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="upload_body"><code>upload_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">File (optional)</div><div class="param-desc"><span class="param-type"><a href="#binary">byte[]</a></span>  format: binary</div>
+    </div>  <!-- field-items -->
+  </div>
+  </body>
+</html>
