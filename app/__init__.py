@@ -1,4 +1,5 @@
 import flask_socketio
+from flasgger import Swagger
 from flask import Flask, redirect, url_for
 from flask_caching import Cache
 from flask_login import LoginManager, current_user
@@ -14,6 +15,7 @@ socketio = flask_socketio.SocketIO(manage_session=False, cors_allowed_origins="*
 login_manager = LoginManager()
 cache = Cache()
 moment = Moment()
+swagger = Swagger()
 
 
 class FlaskAdminIndexView(AdminIndexView):
@@ -38,6 +40,7 @@ def create_app(config_class=Config):
     login_manager.login_view = 'auth.login'
     moment.init_app(app)
     admin_app.init_app(app)
+    swagger.init_app(app)
     CORS(app, supports_credentials=True)
     with app.app_context():
         from . import cli

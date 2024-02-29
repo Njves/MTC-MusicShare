@@ -18,7 +18,7 @@ def load_user(user_id):
 subscribers = db.Table(
     'subscribers',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-    db.Column('room_id', db.Integer(), db.ForeignKey('room.id'),),
+    db.Column('room_id', db.Integer(), db.ForeignKey('room.id'), ),
     db.UniqueConstraint('user_id', 'room_id')
 )
 
@@ -122,6 +122,7 @@ class Room(db.Model):
                          nullable=True)
     messages = db.relationship('Message', backref='room', lazy='dynamic', order_by="Message.date.desc()")
     subscribers = db.relationship('User', secondary=subscribers)
+
     def __repr__(self):
         return self.name
 
@@ -131,3 +132,10 @@ class Room(db.Model):
     @staticmethod
     def is_exists(room_id):
         return Room.query.filter_by(id=room_id).first()
+
+
+class FCMTokens(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+                         unique=True)
+    token = db.Column(db.String, nullable=False)

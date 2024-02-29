@@ -18,7 +18,7 @@ from app import socketio, db
 from app.chat import bp
 from app.chat_socket.routes import users
 from app.image_converter import compress_image
-from app.models import Message, Room, Attachment, User
+from app.models import Message, Room, Attachment, User, FCMTokens
 
 secret_key_firebase = 'AAAA0CBk6uY:APA91bEA95woCXx93EyHCNEqJwarFnwLzuY7fTZQUDMEEQApRzZtwLrAqMTBhjCNYWnjdOZz93K92q88DIaCc8YCngFt7w8ywNdFVEzxwj2ZLtkZ6hd5ZdO8fBsM9jJfnDP--JR7OTmf'
 
@@ -381,16 +381,23 @@ def subscribe(room_id):
     return {}, 200
 
 
-@bp.route('/notification/<string:token>')
-def send_notify(token):
+@bp.route('/notification/<string:token>/<int:user_id>')
+def send_notify(token, user_id):
     notification = {
         'notification':  {
-            'title': 'test',
-            'body': 'test'
+            'title': 'Поздравляем',
+            'body': 'Вы подписались на уведомления'
 
         },
         'to': token
     }
+    user = User.query.all()[0]
+    for i in FCMTokens.query.all():
+        if user.id == i.user_id:
+            return {}, 400
+    tokens = FCMTokens(token=token, user_id=user.id)
+    db.session.add(tokens)
+    db.session.commit()
     res = requests.post('https://fcm.googleapis.com/fcm/send', json=notification,
                         headers={'Authorization': 'key=' + secret_key_firebase, 'Content-Type': 'application/json'})
     print(res.text)
